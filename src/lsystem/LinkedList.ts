@@ -1,7 +1,7 @@
 import {vec3, mat4} from 'gl-matrix';
 
-export class Symb {
-	character: string;
+export class SymbolNode {
+    character: string;
 	iteration: number;
 
     constructor(c : string, it : number) {
@@ -10,60 +10,65 @@ export class Symb {
     }
 };
 
-export class SymbolNode {
-    prev: SymbolNode = null;
-	next: SymbolNode = null;
-	sym: Symb;
-
-    constructor(s : Symb) {
-        this.sym = s;
-    }
-};
-
 class LinkedList {
 	nodes: Array<SymbolNode> = [];
 
     constructor(axiom: string) {
-        this.convertToLinkedList(axiom);
+        this.convertToLinkedList(axiom, 0);
     }
 	
-	convertToLinkedList(axiom: string) {
+	convertToLinkedList(axiom: string, iteration : number) {
         for (let i = 0; i < axiom.length; i++) {
-            const c = axiom.charAt(i);
-            let sym = new Symb(c, 0);
-            let node = new SymbolNode(sym);
+            const sym = axiom.charAt(i);
+            let node = new SymbolNode(sym, iteration);
 
             this.nodes.push(node);
         }
     }
 
-    expandNode(new_sym : string, index : number) {
+    expandNode(new_sym : string, index : number, iteration : number) {
+        console.log("In Expand Node...");
         // Create new SymbolNode list from new symbols
         let nodesToInsert = [];
         for (let i = 0; i < new_sym.length; i++) {
-            const c = new_sym.charAt(i);
-            let sym = new Symb(c, 0);
-            let node = new SymbolNode(sym);
+            const sym = new_sym.charAt(i);
+            let node = new SymbolNode(sym, iteration + 1);
 
             nodesToInsert.push(node);
         }
+        //console.log("Nodes to insert: ", nodesToInsert);
 
         // Replace and insert starting at given index
+        let nodesSize : number = this.nodes.length;
+        //console.log("Nodes size: ", nodesSize);
         for (let j = 0; j < nodesToInsert.length; j++) {
+            //console.log("Node: ", nodesToInsert[j], j);
             if (j == 0) {
                 this.nodes[index] = nodesToInsert[j];
             }
             else {
-                this.nodes.splice(index + j, 0, nodesToInsert[j]);
-            }     
+                // if (j >= nodesSize) {
+                //     this.nodes.push(nodesToInsert[j]);
+                // }
+                // else {
+                    this.nodes.splice(index + j, 0, nodesToInsert[j]);
+                // }     
+            }
         }
+        //console.log("Nodes: ", this.nodes);
+    }
+
+    toString() {
+        let ll_string : string = "";
+        for (let i = 0; i < this.nodes.length; i++) {
+            let sym = this.nodes[i].character;
+            ll_string += sym;
+        }
+        return ll_string;
     }
 
 	print() {
-        for (let i = 0; i < this.nodes.length; i++) {
-            let sym = this.nodes[i].sym.character;
-            console.log(sym);
-        }
+        console.log(this.toString());
     }
 };
 

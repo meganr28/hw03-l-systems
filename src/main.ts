@@ -10,6 +10,7 @@ import ShaderProgram, {Shader} from './rendering/gl/ShaderProgram';
 import Mesh from './geometry/Mesh';
 import LinkedList from './lsystem/LinkedList';
 import LsystemRenderer from './lsystem/LsystemRenderer';
+import LsystemParser from './lsystem/LsystemParser';
 
 // Define an object with application parameters and button callbacks
 // This will be referred to by dat.GUI's functions that add GUI elements.
@@ -55,11 +56,15 @@ function loadScene() {
   square.setNumInstances(n * n); // grid of "particles"*/
 
   // Test out Lsystem class 
-  let symbolList = new LinkedList("F[+F][-F]");
-  let lsystemRenderer = new LsystemRenderer(symbolList);
-  lsystemRenderer.render();
+  let lsystemParser : LsystemParser = new LsystemParser("F");
+  lsystemParser.parse(3);
+  lsystemParser.axiom.print();
 
-  let n : number = lsystemRenderer.turt.positions.length;
+  //let symbolList = new LinkedList("F[+F][-F]");
+  //let lsystemRenderer = new LsystemRenderer(symbolList);
+  //lsystemRenderer.render();
+
+  /*let n : number = lsystemRenderer.turt.positions.length;
   for (let k = 0; k < n; k++) {
     offsetsArray.push(lsystemRenderer.turt.positions[k][0]);
     offsetsArray.push(lsystemRenderer.turt.positions[k][1]);
@@ -73,7 +78,7 @@ function loadScene() {
   let offsets: Float32Array = new Float32Array(offsetsArray);
   let colors: Float32Array = new Float32Array(colorsArray);
   square.setInstanceVBOs(offsets, colors);
-  square.setNumInstances(n);
+  square.setNumInstances(n);*/
 }
 
 function main() {

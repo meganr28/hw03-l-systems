@@ -65,10 +65,10 @@ class LsystemRenderer {
   render() {
     // Iterate through list of symbols 
     for (let i = 0; i < this.symbolList.nodes.length; i++) {
-        let sym = this.symbolList.nodes[i].sym;
+        let sym = this.symbolList.nodes[i].character;
         // Query drawing rules map for drawing command that corresponds with symbol
         // If a command exists, execute it
-        let drawRule = this.drawMap.drawingRules.get(sym.character);
+        let drawRule = this.drawMap.drawingRules.get(sym);
         let drawCmd = drawRule.postconditions[0].drawCmd; // TODO: choose based on probability, will need to iterate when there is more than one
         //console.log(i, sym, drawCmd);
         if (drawCmd) { 
