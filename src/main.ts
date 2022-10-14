@@ -7,6 +7,9 @@ import OpenGLRenderer from './rendering/gl/OpenGLRenderer';
 import Camera from './Camera';
 import {setGL} from './globals';
 import ShaderProgram, {Shader} from './rendering/gl/ShaderProgram';
+import Mesh from './geometry/Mesh';
+import LinkedList from './lsystem/LinkedList';
+import LsystemRenderer from './lsystem/LsystemRenderer';
 
 // Define an object with application parameters and button callbacks
 // This will be referred to by dat.GUI's functions that add GUI elements.
@@ -15,6 +18,7 @@ const controls = {
 
 let square: Square;
 let screenQuad: ScreenQuad;
+//let cylinder: Mesh;
 let time: number = 0.0;
 
 function loadScene() {
@@ -22,6 +26,8 @@ function loadScene() {
   square.create();
   screenQuad = new ScreenQuad();
   screenQuad.create();
+  //cylinder = new Mesh();
+  //cylinder.create();
 
   // Set up instanced rendering data arrays here.
   // This example creates a set of positional
@@ -30,7 +36,7 @@ function loadScene() {
   // one square is actually passed to the GPU
   let offsetsArray = [];
   let colorsArray = [];
-  let n: number = 100.0;
+  /*let n: number = 100.0;
   for(let i = 0; i < n; i++) {
     for(let j = 0; j < n; j++) {
       offsetsArray.push(i);
@@ -46,7 +52,28 @@ function loadScene() {
   let offsets: Float32Array = new Float32Array(offsetsArray);
   let colors: Float32Array = new Float32Array(colorsArray);
   square.setInstanceVBOs(offsets, colors);
-  square.setNumInstances(n * n); // grid of "particles"
+  square.setNumInstances(n * n); // grid of "particles"*/
+
+  // Test out Lsystem class 
+  let symbolList = new LinkedList("F[+F][-F]");
+  let lsystemRenderer = new LsystemRenderer(symbolList);
+  lsystemRenderer.render();
+
+  let n : number = lsystemRenderer.turt.positions.length;
+  for (let k = 0; k < n; k++) {
+    offsetsArray.push(lsystemRenderer.turt.positions[k][0]);
+    offsetsArray.push(lsystemRenderer.turt.positions[k][1]);
+    offsetsArray.push(lsystemRenderer.turt.positions[k][2]);
+
+    colorsArray.push(1.0);
+    colorsArray.push(1.0);
+    colorsArray.push(1.0);
+    colorsArray.push(1.0);
+  }
+  let offsets: Float32Array = new Float32Array(offsetsArray);
+  let colors: Float32Array = new Float32Array(colorsArray);
+  square.setInstanceVBOs(offsets, colors);
+  square.setNumInstances(n);
 }
 
 function main() {
@@ -74,7 +101,7 @@ function main() {
   // Initial call to load scene
   loadScene();
 
-  const camera = new Camera(vec3.fromValues(50, 50, 10), vec3.fromValues(50, 50, 0));
+  const camera = new Camera(vec3.fromValues(0, 0, 5), vec3.fromValues(0, 0, 0));
 
   const renderer = new OpenGLRenderer(canvas);
   renderer.setClearColor(0.2, 0.2, 0.2, 1);
