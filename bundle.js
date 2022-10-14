@@ -122,6 +122,19 @@ function equals(a, b) {
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return gl; });
+/* harmony export (immutable) */ __webpack_exports__["b"] = setGL;
+var gl;
+function setGL(_gl) {
+    gl = _gl;
+}
+
+
+/***/ }),
+/* 2 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__gl_matrix_common_js__ = __webpack_require__(0);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__gl_matrix_mat2_js__ = __webpack_require__(22);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_2__gl_matrix_mat2d_js__ = __webpack_require__(23);
@@ -153,19 +166,6 @@ function equals(a, b) {
 
 
 
-
-
-/***/ }),
-/* 2 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "a", function() { return gl; });
-/* harmony export (immutable) */ __webpack_exports__["b"] = setGL;
-var gl;
-function setGL(_gl) {
-    gl = _gl;
-}
 
 
 /***/ }),
@@ -5216,7 +5216,7 @@ var forEach = function () {
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__globals__ = __webpack_require__(2);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__globals__ = __webpack_require__(1);
 
 class Drawable {
     constructor() {
@@ -5996,7 +5996,7 @@ function determinant(a) {
 
 "use strict";
 Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_gl_matrix__ = __webpack_require__(1);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_gl_matrix__ = __webpack_require__(2);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_stats_js__ = __webpack_require__(26);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_1_stats_js___default = __webpack_require__.n(__WEBPACK_IMPORTED_MODULE_1_stats_js__);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_2_dat_gui__ = __webpack_require__(27);
@@ -6005,11 +6005,9 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_4__geometry_ScreenQuad__ = __webpack_require__(31);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_5__rendering_gl_OpenGLRenderer__ = __webpack_require__(32);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_6__Camera__ = __webpack_require__(33);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_7__globals__ = __webpack_require__(2);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_7__globals__ = __webpack_require__(1);
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_8__rendering_gl_ShaderProgram__ = __webpack_require__(68);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_9__lsystem_LinkedList__ = __webpack_require__(69);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_10__lsystem_LsystemRenderer__ = __webpack_require__(70);
-
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_9__lsystem_LsystemParser__ = __webpack_require__(69);
 
 
 
@@ -6059,23 +6057,27 @@ function loadScene() {
     square.setInstanceVBOs(offsets, colors);
     square.setNumInstances(n * n); // grid of "particles"*/
     // Test out Lsystem class 
-    let symbolList = new __WEBPACK_IMPORTED_MODULE_9__lsystem_LinkedList__["a" /* default */]("F[+F][-F]");
-    let lsystemRenderer = new __WEBPACK_IMPORTED_MODULE_10__lsystem_LsystemRenderer__["a" /* default */](symbolList);
-    lsystemRenderer.render();
-    let n = lsystemRenderer.turt.positions.length;
+    let lsystemParser = new __WEBPACK_IMPORTED_MODULE_9__lsystem_LsystemParser__["a" /* default */]("F");
+    lsystemParser.parse(3);
+    lsystemParser.axiom.print();
+    //let symbolList = new LinkedList("F[+F][-F]");
+    //let lsystemRenderer = new LsystemRenderer(symbolList);
+    //lsystemRenderer.render();
+    /*let n : number = lsystemRenderer.turt.positions.length;
     for (let k = 0; k < n; k++) {
-        offsetsArray.push(lsystemRenderer.turt.positions[k][0]);
-        offsetsArray.push(lsystemRenderer.turt.positions[k][1]);
-        offsetsArray.push(lsystemRenderer.turt.positions[k][2]);
-        colorsArray.push(1.0);
-        colorsArray.push(1.0);
-        colorsArray.push(1.0);
-        colorsArray.push(1.0);
+      offsetsArray.push(lsystemRenderer.turt.positions[k][0]);
+      offsetsArray.push(lsystemRenderer.turt.positions[k][1]);
+      offsetsArray.push(lsystemRenderer.turt.positions[k][2]);
+  
+      colorsArray.push(1.0);
+      colorsArray.push(1.0);
+      colorsArray.push(1.0);
+      colorsArray.push(1.0);
     }
-    let offsets = new Float32Array(offsetsArray);
-    let colors = new Float32Array(colorsArray);
+    let offsets: Float32Array = new Float32Array(offsetsArray);
+    let colors: Float32Array = new Float32Array(colorsArray);
     square.setInstanceVBOs(offsets, colors);
-    square.setNumInstances(n);
+    square.setNumInstances(n);*/
 }
 function main() {
     // Initial display for framerate
@@ -6104,12 +6106,12 @@ function main() {
     gl.enable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ONE); // Additive blending
     const instancedShader = new __WEBPACK_IMPORTED_MODULE_8__rendering_gl_ShaderProgram__["b" /* default */]([
-        new __WEBPACK_IMPORTED_MODULE_8__rendering_gl_ShaderProgram__["a" /* Shader */](gl.VERTEX_SHADER, __webpack_require__(72)),
-        new __WEBPACK_IMPORTED_MODULE_8__rendering_gl_ShaderProgram__["a" /* Shader */](gl.FRAGMENT_SHADER, __webpack_require__(73)),
+        new __WEBPACK_IMPORTED_MODULE_8__rendering_gl_ShaderProgram__["a" /* Shader */](gl.VERTEX_SHADER, __webpack_require__(71)),
+        new __WEBPACK_IMPORTED_MODULE_8__rendering_gl_ShaderProgram__["a" /* Shader */](gl.FRAGMENT_SHADER, __webpack_require__(72)),
     ]);
     const flat = new __WEBPACK_IMPORTED_MODULE_8__rendering_gl_ShaderProgram__["b" /* default */]([
-        new __WEBPACK_IMPORTED_MODULE_8__rendering_gl_ShaderProgram__["a" /* Shader */](gl.VERTEX_SHADER, __webpack_require__(74)),
-        new __WEBPACK_IMPORTED_MODULE_8__rendering_gl_ShaderProgram__["a" /* Shader */](gl.FRAGMENT_SHADER, __webpack_require__(75)),
+        new __WEBPACK_IMPORTED_MODULE_8__rendering_gl_ShaderProgram__["a" /* Shader */](gl.VERTEX_SHADER, __webpack_require__(73)),
+        new __WEBPACK_IMPORTED_MODULE_8__rendering_gl_ShaderProgram__["a" /* Shader */](gl.FRAGMENT_SHADER, __webpack_require__(74)),
     ]);
     // This function will be called every frame
     function tick() {
@@ -13139,7 +13141,7 @@ dat.utils.common);
 
 "use strict";
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__rendering_gl_Drawable__ = __webpack_require__(10);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__globals__ = __webpack_require__(2);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__globals__ = __webpack_require__(1);
 
 
 class Square extends __WEBPACK_IMPORTED_MODULE_0__rendering_gl_Drawable__["a" /* default */] {
@@ -13183,7 +13185,7 @@ class Square extends __WEBPACK_IMPORTED_MODULE_0__rendering_gl_Drawable__["a" /*
 
 "use strict";
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__rendering_gl_Drawable__ = __webpack_require__(10);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__globals__ = __webpack_require__(2);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__globals__ = __webpack_require__(1);
 
 
 class ScreenQuad extends __WEBPACK_IMPORTED_MODULE_0__rendering_gl_Drawable__["a" /* default */] {
@@ -13217,8 +13219,8 @@ class ScreenQuad extends __WEBPACK_IMPORTED_MODULE_0__rendering_gl_Drawable__["a
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_gl_matrix__ = __webpack_require__(1);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__globals__ = __webpack_require__(2);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_gl_matrix__ = __webpack_require__(2);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__globals__ = __webpack_require__(1);
 
 
 // In this file, `gl` is accessible because it is imported above
@@ -13262,7 +13264,7 @@ class OpenGLRenderer {
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_gl_matrix__ = __webpack_require__(1);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_gl_matrix__ = __webpack_require__(2);
 var CameraControls = __webpack_require__(34);
 
 class Camera {
@@ -16389,8 +16391,8 @@ module.exports = true;
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_gl_matrix__ = __webpack_require__(1);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__globals__ = __webpack_require__(2);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_gl_matrix__ = __webpack_require__(2);
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__globals__ = __webpack_require__(1);
 
 
 var activeProgram = null;
@@ -16546,20 +16548,97 @@ class ShaderProgram {
 /***/ (function(module, __webpack_exports__, __webpack_require__) {
 
 "use strict";
-class Symb {
+/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0__LinkedList__ = __webpack_require__(70);
+
+class ExpansionPostcondition {
+    constructor(s, prob) {
+        this.sym = s;
+        this.probability = prob;
+    }
+}
+/* unused harmony export ExpansionPostcondition */
+
+;
+class ExpansionRule {
+    constructor() {
+        this.postconditions = new Array();
+    }
+}
+/* unused harmony export ExpansionRule */
+
+;
+class ExpansionRuleMap {
+    constructor() {
+        this.expansionRules = new Map();
+    }
+}
+/* unused harmony export ExpansionRuleMap */
+
+;
+class LsystemParser {
+    constructor(axiom) {
+        this.axiom = new __WEBPACK_IMPORTED_MODULE_0__LinkedList__["a" /* default */](axiom);
+        this.grammar = new ExpansionRuleMap();
+        // Init map rules
+        let pcond1 = new ExpansionPostcondition("F+F−F−F+F", 1.0);
+        let pcond2 = new ExpansionPostcondition("AB", 1.0);
+        let rule1 = new ExpansionRule();
+        let rule2 = new ExpansionRule();
+        rule1.postconditions.push(pcond1);
+        rule2.postconditions.push(pcond2);
+        this.grammar.expansionRules.set('F', rule1);
+        this.grammar.expansionRules.set('A', rule2);
+        this.grammar.expansionRules.forEach((value, key) => {
+            console.log(key, value.postconditions[0]);
+        });
+        /*for (let i = 0; i < this.axiom.nodes.length; i++) {
+          console.log("Axiom Node: ", this.axiom.nodes[i].sym.character);
+        }*/
+    }
+    applyRule(precondition) {
+        let expRule = this.grammar.expansionRules.get(precondition);
+        if (!expRule)
+            return "";
+        let postcondition = expRule.postconditions[0].sym; // TODO: choose based on probability, will need to iterate when there is more than one
+        return postcondition;
+    }
+    parse(iterations) {
+        //console.log("In Parsing...");
+        //console.log("Axiom: ", this.axiom.nodes[0].character);
+        for (let i = 0; i < iterations; i++) {
+            //console.log("ITERATION: ", i);
+            //console.log("Axiom Size: ", this.axiom.nodes.length);
+            for (let j = 0; j < this.axiom.nodes.length; j++) {
+                //console.log("j: ", j);
+                // If not current iteration, skip
+                let curr_it = this.axiom.nodes[j].iteration;
+                //console.log("Node iteration: ", curr_it);
+                if (curr_it != i)
+                    continue;
+                // Find rule that corresponds to current symbol in grammar
+                let curr_sym = this.axiom.nodes[j].character;
+                //console.log("Curr Sym: ", curr_sym);
+                let new_sym = this.applyRule(curr_sym);
+                //console.log("New Sym: ", new_sym);
+                this.axiom.expandNode(new_sym, j, i);
+                //console.log("Axiom: ", this.axiom.nodes);
+            }
+        }
+    }
+}
+;
+/* harmony default export */ __webpack_exports__["a"] = (LsystemParser);
+
+
+/***/ }),
+/* 70 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+class SymbolNode {
     constructor(c, it) {
         this.character = c;
         this.iteration = it;
-    }
-}
-/* unused harmony export Symb */
-
-;
-class SymbolNode {
-    constructor(s) {
-        this.prev = null;
-        this.next = null;
-        this.sym = s;
     }
 }
 /* unused harmony export SymbolNode */
@@ -16568,40 +16647,54 @@ class SymbolNode {
 class LinkedList {
     constructor(axiom) {
         this.nodes = [];
-        this.convertToLinkedList(axiom);
+        this.convertToLinkedList(axiom, 0);
     }
-    convertToLinkedList(axiom) {
+    convertToLinkedList(axiom, iteration) {
         for (let i = 0; i < axiom.length; i++) {
-            const c = axiom.charAt(i);
-            let sym = new Symb(c, 0);
-            let node = new SymbolNode(sym);
+            const sym = axiom.charAt(i);
+            let node = new SymbolNode(sym, iteration);
             this.nodes.push(node);
         }
     }
-    expandNode(new_sym, index) {
+    expandNode(new_sym, index, iteration) {
+        console.log("In Expand Node...");
         // Create new SymbolNode list from new symbols
         let nodesToInsert = [];
         for (let i = 0; i < new_sym.length; i++) {
-            const c = new_sym.charAt(i);
-            let sym = new Symb(c, 0);
-            let node = new SymbolNode(sym);
+            const sym = new_sym.charAt(i);
+            let node = new SymbolNode(sym, iteration + 1);
             nodesToInsert.push(node);
         }
+        //console.log("Nodes to insert: ", nodesToInsert);
         // Replace and insert starting at given index
+        let nodesSize = this.nodes.length;
+        //console.log("Nodes size: ", nodesSize);
         for (let j = 0; j < nodesToInsert.length; j++) {
+            //console.log("Node: ", nodesToInsert[j], j);
             if (j == 0) {
                 this.nodes[index] = nodesToInsert[j];
             }
             else {
+                // if (j >= nodesSize) {
+                //     this.nodes.push(nodesToInsert[j]);
+                // }
+                // else {
                 this.nodes.splice(index + j, 0, nodesToInsert[j]);
+                // }     
             }
         }
+        //console.log("Nodes: ", this.nodes);
+    }
+    toString() {
+        let ll_string = "";
+        for (let i = 0; i < this.nodes.length; i++) {
+            let sym = this.nodes[i].character;
+            ll_string += sym;
+        }
+        return ll_string;
     }
     print() {
-        for (let i = 0; i < this.nodes.length; i++) {
-            let sym = this.nodes[i].sym.character;
-            console.log(sym);
-        }
+        console.log(this.toString());
     }
 }
 ;
@@ -16609,170 +16702,25 @@ class LinkedList {
 
 
 /***/ }),
-/* 70 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_gl_matrix__ = __webpack_require__(1);
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_1__Turtle__ = __webpack_require__(71);
-
-
-class DrawingPostcondition {
-    constructor(cmd, prob) {
-        this.drawCmd = cmd;
-        this.probability = prob;
-    }
-}
-/* unused harmony export DrawingPostcondition */
-
-;
-class DrawingRule {
-    constructor() {
-        this.postconditions = [];
-    }
-}
-/* unused harmony export DrawingRule */
-
-;
-class DrawingRuleMap {
-    constructor() {
-        this.drawingRules = new Map(); // TODO: change this back to DrawingRule
-    }
-}
-/* unused harmony export DrawingRuleMap */
-
-;
-class LsystemRenderer {
-    constructor(symbols) {
-        this.symbolList = symbols;
-        this.turtleStates = new Array();
-        this.drawMap = new DrawingRuleMap();
-        this.turt = new __WEBPACK_IMPORTED_MODULE_1__Turtle__["a" /* default */](__WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].fromValues(0.0, 0.0, 0.0), __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].fromValues(0.0, 1.0, 0.0), 45.0, 1.0);
-        // Init map symbols
-        let pcond1 = new DrawingPostcondition(this.turt.moveForward.bind(this.turt), 1.0);
-        let pcond2 = new DrawingPostcondition(this.turt.rotateLeft.bind(this.turt), 1.0);
-        let pcond3 = new DrawingPostcondition(this.turt.rotateRight.bind(this.turt), 1.0);
-        let pcond4 = new DrawingPostcondition(this.pushState.bind(this), 1.0);
-        let pcond5 = new DrawingPostcondition(this.popState.bind(this), 1.0);
-        let rule1 = new DrawingRule();
-        let rule2 = new DrawingRule();
-        let rule3 = new DrawingRule();
-        let rule4 = new DrawingRule();
-        let rule5 = new DrawingRule();
-        rule1.postconditions.push(pcond1);
-        rule2.postconditions.push(pcond2);
-        rule3.postconditions.push(pcond3);
-        rule4.postconditions.push(pcond4);
-        rule5.postconditions.push(pcond5);
-        this.drawMap.drawingRules.set('F', rule1);
-        this.drawMap.drawingRules.set('-', rule2);
-        this.drawMap.drawingRules.set('+', rule3);
-        this.drawMap.drawingRules.set('[', rule4);
-        this.drawMap.drawingRules.set(']', rule5);
-        /*this.drawMap.drawingRules.forEach((value: DrawingRule, key: string) => {
-            console.log(key, value.postconditions[0]);
-        });*/
-    }
-    render() {
-        // Iterate through list of symbols 
-        for (let i = 0; i < this.symbolList.nodes.length; i++) {
-            let sym = this.symbolList.nodes[i].sym;
-            // Query drawing rules map for drawing command that corresponds with symbol
-            // If a command exists, execute it
-            let drawRule = this.drawMap.drawingRules.get(sym.character);
-            let drawCmd = drawRule.postconditions[0].drawCmd; // TODO: choose based on probability, will need to iterate when there is more than one
-            //console.log(i, sym, drawCmd);
-            if (drawCmd) {
-                drawCmd();
-            }
-        }
-    }
-    pushState() {
-        this.turtleStates.push(this.turt);
-        console.log(this.turtleStates[0].position);
-    }
-    popState() {
-        this.turt = this.turtleStates.pop();
-    }
-}
-;
-/* harmony default export */ __webpack_exports__["a"] = (LsystemRenderer);
-
-
-/***/ }),
 /* 71 */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
-
-"use strict";
-/* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_gl_matrix__ = __webpack_require__(1);
-
-class Turtle {
-    constructor(position, direction, angle, length) {
-        this.position = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].create(); // Position of turtle (pivot point of cylinder)
-        this.direction = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].create(); // Orientation expressed as ray direction (not normalized)
-        this.orientation = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].create(); // Orientation expressed as Euler Angles (X, Y, Z)
-        this.angle = 0.0; // rotation angle
-        this.length = 1.0; // length of a branch
-        this.depth = 0;
-        this.position = position;
-        this.direction = direction;
-        this.angle = angle;
-        this.length = length;
-        this.positions = new Array();
-        this.orientations = new Array();
-    }
-    moveForward() {
-        // Add current position and orientation to vectors for instanced rendering
-        this.positions.push(__WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].fromValues(this.position[0], this.position[1], this.position[2]));
-        this.orientations.push(__WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].fromValues(this.orientation[0], this.orientation[1], this.orientation[2]));
-        // Move the turtle
-        __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].add(this.position, this.position, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].multiply(this.direction, this.direction, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].fromValues(this.length, this.length, this.length)));
-    }
-    rotateDirection() {
-        // TODO: ADD X, Y ROTATION TO THIS
-        let rotateMat = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["b" /* mat4 */].create();
-        let dirCopy = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].fromValues(this.direction[0], this.direction[1], this.direction[2], 0.0);
-        // Create Z-rotation matrix that rotates vec4 by this.angle
-        __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["b" /* mat4 */].rotateZ(rotateMat, rotateMat, this.angle * (Math.PI / 180.0));
-        __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec4 */].transformMat4(dirCopy, dirCopy, rotateMat);
-        // Place value into this.direction
-        this.direction = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].fromValues(dirCopy[0], dirCopy[1], dirCopy[2]);
-    }
-    rotateLeft(x, y, z) {
-        // Rotate direction vector 
-        this.rotateDirection();
-        __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].add(this.orientation, this.orientation, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].fromValues(x, y, z));
-    }
-    rotateRight(x, y, z) {
-        // Rotate direction vector 
-        this.rotateDirection();
-        __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].subtract(this.orientation, this.orientation, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].fromValues(x, y, z));
-    }
-}
-;
-/* harmony default export */ __webpack_exports__["a"] = (Turtle);
-
-
-/***/ }),
-/* 72 */
 /***/ (function(module, exports) {
 
 module.exports = "#version 300 es\n\nuniform mat4 u_ViewProj;\nuniform float u_Time;\n\nuniform mat3 u_CameraAxes; // Used for rendering particles as billboards (quads that are always looking at the camera)\n// gl_Position = center + vs_Pos.x * camRight + vs_Pos.y * camUp;\n\nin vec4 vs_Pos; // Non-instanced; each particle is the same quad drawn in a different place\nin vec4 vs_Nor; // Non-instanced, and presently unused\nin vec4 vs_Col; // An instanced rendering attribute; each particle instance has a different color\nin vec3 vs_Translate; // Another instance rendering attribute used to position each quad instance in the scene\nin vec2 vs_UV; // Non-instanced, and presently unused in main(). Feel free to use it for your meshes.\n\nout vec4 fs_Col;\nout vec4 fs_Pos;\n\nvoid main()\n{\n    fs_Col = vs_Col;\n    fs_Pos = vs_Pos;\n\n    vec3 offset = vs_Translate;\n    //offset.z = (sin((u_Time + offset.x) * 3.14159 * 0.1) + cos((u_Time + offset.y) * 3.14159 * 0.1)) * 1.5;\n\n    vec3 billboardPos = offset + vs_Pos.x * u_CameraAxes[0] + vs_Pos.y * u_CameraAxes[1];\n\n    gl_Position = u_ViewProj * vec4(billboardPos, 1.0);\n}\n"
 
 /***/ }),
-/* 73 */
+/* 72 */
 /***/ (function(module, exports) {
 
 module.exports = "#version 300 es\nprecision highp float;\n\nin vec4 fs_Col;\nin vec4 fs_Pos;\n\nout vec4 out_Col;\n\nvoid main()\n{\n    //float dist = 1.0 - (length(fs_Pos.xyz) * 2.0);\n    out_Col = fs_Col;\n}\n"
 
 /***/ }),
-/* 74 */
+/* 73 */
 /***/ (function(module, exports) {
 
 module.exports = "#version 300 es\nprecision highp float;\n\n// The vertex shader used to render the background of the scene\n\nin vec4 vs_Pos;\nout vec2 fs_Pos;\n\nvoid main() {\n  fs_Pos = vs_Pos.xy;\n  gl_Position = vs_Pos;\n}\n"
 
 /***/ }),
-/* 75 */
+/* 74 */
 /***/ (function(module, exports) {
 
 module.exports = "#version 300 es\nprecision highp float;\n\nuniform vec3 u_Eye, u_Ref, u_Up;\nuniform vec2 u_Dimensions;\nuniform float u_Time;\n\nin vec2 fs_Pos;\nout vec4 out_Col;\n\nvoid main() {\n  out_Col = vec4(0.5 * (fs_Pos + vec2(1.0)), 0.0, 1.0);\n}\n"
