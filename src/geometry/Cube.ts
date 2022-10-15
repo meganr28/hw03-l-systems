@@ -7,6 +7,9 @@ class Cube extends Drawable {
   positions: Float32Array;
   normals: Float32Array;
   center: vec4;
+  colors: Float32Array;
+  offsets: Float32Array; // Data for bufTransform
+
 
   constructor(center: vec3) {
     super(); // Call the constructor of the super class. This is required.
@@ -108,6 +111,8 @@ class Cube extends Drawable {
     this.generateIdx();
     this.generatePos();
     this.generateNor();
+    this.generateCol();
+    this.generateTransform();
 
     this.count = this.indices.length;
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.bufIdx);
@@ -120,6 +125,16 @@ class Cube extends Drawable {
     gl.bufferData(gl.ARRAY_BUFFER, this.positions, gl.STATIC_DRAW);
 
     console.log(`Created cube`);
+  }
+
+  setInstanceVBOs(offsets: Float32Array, colors: Float32Array) {
+    this.colors = colors;
+    this.offsets = offsets;
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.bufCol);
+    gl.bufferData(gl.ARRAY_BUFFER, this.colors, gl.STATIC_DRAW);
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.bufTransform);
+    gl.bufferData(gl.ARRAY_BUFFER, this.offsets, gl.STATIC_DRAW);
   }
 };
 

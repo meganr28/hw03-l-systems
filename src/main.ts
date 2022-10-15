@@ -1,4 +1,4 @@
-import {vec3} from 'gl-matrix';
+import {vec3, mat4, quat} from 'gl-matrix';
 import * as Stats from 'stats-js';
 import * as DAT from 'dat-gui';
 import Square from './geometry/Square';
@@ -18,7 +18,7 @@ import Cube from './geometry/Cube';
 const controls = {
   Iterations: 1,
   Angle: 45.0,
-  StepSize: 1.0,
+  StepSize: 2.0,
   Axiom: "F",
   Rule_1: "F=F[+F][-F]",
   Probability_1: 1.0
@@ -47,11 +47,25 @@ function updateBuffers() {
   let colorsArray = [];
 
   let n : number = lsystemRenderer.positions.length;
+  //console.log("Positions: ", lsystemRenderer.positions);
   for (let k = 0; k < n; k++) {
-    offsetsArray.push(lsystemRenderer.positions[k][0]);
-    offsetsArray.push(lsystemRenderer.positions[k][1]);
-    offsetsArray.push(lsystemRenderer.positions[k][2]);
+    let pos : vec3 = lsystemRenderer.positions[k];
+    let rot : vec3 = lsystemRenderer.orientations[k];
+    let scl : vec3 = vec3.fromValues(1, lsystemRenderer.length, 1);
 
+    // Transform rotation into quaternion
+    let quat_rot : quat = quat.create();
+    quat.fromEuler(quat_rot, rot[0], rot[1], rot[2]);
+    let transform = mat4.create();
+    mat4.fromRotationTranslationScale(transform, quat_rot, pos, scl);
+
+    // Copy over matrix into offsets array
+    for (let m = 0; m < 16; m += 4) {
+      offsetsArray.push(transform[m]);
+      offsetsArray.push(transform[m + 1]);
+      offsetsArray.push(transform[m + 2]);
+      offsetsArray.push(transform[m + 3]);
+    }
     colorsArray.push(1.0);
     colorsArray.push(1.0);
     colorsArray.push(1.0);
@@ -59,8 +73,10 @@ function updateBuffers() {
   }
   let offsets: Float32Array = new Float32Array(offsetsArray);
   let colors: Float32Array = new Float32Array(colorsArray);
-  square.setInstanceVBOs(offsets, colors);
-  square.setNumInstances(n);
+  //square.setInstanceVBOs(offsets, colors);
+  cube.setInstanceVBOs(offsets, colors);
+  //square.setNumInstances(n);
+  cube.setNumInstances(n);
 }
 
 function updateLsystem() {
@@ -69,6 +85,7 @@ function updateLsystem() {
   if (controls.Iterations != prevIterations)
   {
     prevIterations = controls.Iterations;
+    lsystemParser.clearAxiom(controls.Axiom);
     lsystemParser.setIterations(controls.Iterations);
     axiom = lsystemParser.parse();
     paramsDirty = 1;
@@ -119,11 +136,6 @@ function updateLsystem() {
     lsystemRenderer.render();
     updateBuffers();
   }
-  // Update attributes
-  // lsystemParser.setIterations(controls.Iterations);
-  // lsystemParser.setAxiom(controls.Axiom);
-  // lsystemParser.grammar.addRules([controls.Rule_1], [controls.Probability_1]);
-  // let axiom : LinkedList = lsystemParser.parse();
 }
 
 function loadScene() {
@@ -161,7 +173,7 @@ function loadScene() {
   square.setInstanceVBOs(offsets, colors);
   square.setNumInstances(n * n); // grid of "particles"*/
 
-  // Test out Lsystem class 
+  // Test out Lsystem
   lsystemParser = new LsystemParser(controls.Axiom, [controls.Rule_1], [controls.Probability_1], controls.Iterations);
   axiom = lsystemParser.parse();
   axiom.print();
@@ -170,8 +182,6 @@ function loadScene() {
   lsystemRenderer = new LsystemRenderer(axiom, controls.Angle, controls.StepSize);
   lsystemRenderer.render();
   updateBuffers();
-  //console.log("Turtle initial positions: ", lsystemRenderer.turt.positions.length);
-  //console.log("Turtle initial orientations: ", lsystemRenderer.turt.orientations.length);
 }
 
 function main() {
@@ -233,7 +243,7 @@ function main() {
     renderer.clear();
     renderer.render(camera, flat, [screenQuad]);
     renderer.render(camera, instancedShader, [
-      square,
+      cube,
     ]);
     //renderer.render(camera, flat, [cube]);
     stats.end();

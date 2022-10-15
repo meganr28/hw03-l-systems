@@ -6,9 +6,10 @@ class Turtle {
   orientation: vec3 = vec3.create();  // Orientation expressed as Euler Angles (X, Y, Z)
   depth: number = 0;
 
-  constructor(position: vec3, direction: vec3) {
+  constructor(position: vec3, direction: vec3, orientation : vec3) {
     this.position = vec3.fromValues(position[0], position[1], position[2]);
     this.direction = vec3.fromValues(direction[0], direction[1], direction[2]);
+    this.orientation = vec3.fromValues(orientation[0], orientation[1], orientation[2]);
   }
 
   moveForward(length : number) {
