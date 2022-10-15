@@ -53,6 +53,8 @@ class Mesh extends Drawable {
     this.positions = new Float32Array(posTemp);
     this.uvs = new Float32Array(uvsTemp);
 
+    //console.log(loadedMesh.vertices.length);
+
     this.generateIdx();
     this.generatePos();
     this.generateNor();

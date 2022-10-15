@@ -17,36 +17,74 @@ export class ExpansionRule {
 
 export class ExpansionRuleMap {
 	expansionRules: Map<string, ExpansionRule> = new Map();
+
+  // TODO: clear map?
+  addRule(rule : string, prob : number) {
+    let split_rule = rule.split("=", 2);
+
+    let precondition = split_rule[0];
+    let postcondition = new ExpansionPostcondition(split_rule[1], prob);
+
+    if (this.expansionRules.has(precondition)) {
+      this.expansionRules.get(precondition).postconditions.push(postcondition);
+    }
+    else {
+      let rule = new ExpansionRule();
+      rule.postconditions.push(postcondition);
+      this.expansionRules.set(precondition, rule);
+    }
+  }
+
+  addRules(new_rules : string[], new_probs : number[]) {
+    this.expansionRules.clear();
+    for (let i = 0; i < new_rules.length; i++) {
+      this.addRule(new_rules[i], new_probs[i]);
+    }
+
+    // this.expansionRules.forEach((value: ExpansionRule, key: string) => {
+    //   console.log(key, value.postconditions[0]);
+    // });
+  }
+
+  updateRuleProbability(rule : string, prob : number, index : number) {
+    let split_rule = rule.split("=", 2);
+    let precondition = split_rule[0];
+    let expRule = this.expansionRules.get(precondition);
+    if (expRule) {
+      expRule.postconditions[index].probability = prob;
+    }
+  }
 };
 
 class LsystemParser {
   axiom: LinkedList;         // this will store the final expanded string
   grammar: ExpansionRuleMap; // rules that determine what symbols appear
+  iterations: number;
 
-  constructor(axiom: string) {
+  constructor(axiom: string, rules : string[], probabilities : number[], iter : number) {
     this.axiom = new LinkedList(axiom);
     this.grammar = new ExpansionRuleMap();
+    this.iterations = iter;
 
-    // Init map rules
-    let pcond1 = new ExpansionPostcondition("F+F−F−F+F", 1.0);
-    let pcond2 = new ExpansionPostcondition("AB", 1.0);
-
-    let rule1 = new ExpansionRule();
-    let rule2 = new ExpansionRule();
-
-    rule1.postconditions.push(pcond1);
-    rule2.postconditions.push(pcond2);
-
-    this.grammar.expansionRules.set('F', rule1);
-    this.grammar.expansionRules.set('A', rule2);
-
-    this.grammar.expansionRules.forEach((value: ExpansionRule, key: string) => {
-        console.log(key, value.postconditions[0]);
-    });
+    // Init grammar rules
+    this.grammar.addRules(rules, probabilities);
 
     /*for (let i = 0; i < this.axiom.nodes.length; i++) {
       console.log("Axiom Node: ", this.axiom.nodes[i].sym.character);
     }*/    
+  }
+
+  setAxiom(new_axiom : string) {
+    this.axiom.update(new_axiom);
+  }
+
+  setIterations(iter : number) {
+    this.iterations = iter;
+  }
+
+  setRules(rules : string[], probabilities : number[]) {
+    this.grammar.expansionRules.clear();
+    this.grammar.addRules(rules, probabilities);
   }
 
   applyRule(precondition : string) {
@@ -56,10 +94,16 @@ class LsystemParser {
     return postcondition;
   }
 
-  parse(iterations : number) {
+  clearAxiom(axiom : string) {
+    this.axiom.update(axiom);
+  }
+
+  parse() {
     //console.log("In Parsing...");
-    //console.log("Axiom: ", this.axiom.nodes[0].character);
-    for (let i = 0; i < iterations; i++) {
+    //console.log("Axiom: ", this.axiom.nodes);
+    //console.log("Rules: ", this.grammar.expansionRules);
+    //console.log("Num Iterations: ", this.iterations);
+    for (let i = 0; i < this.iterations; i++) {
       //console.log("ITERATION: ", i);
       //console.log("Axiom Size: ", this.axiom.nodes.length);
       for (let j = 0; j < this.axiom.nodes.length; j++) {
@@ -78,6 +122,8 @@ class LsystemParser {
         //console.log("Axiom: ", this.axiom.nodes);
       }
     }
+    //console.log(this.axiom.nodes);
+    return this.axiom;
   }
 };
 

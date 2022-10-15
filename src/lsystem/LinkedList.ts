@@ -18,6 +18,7 @@ class LinkedList {
     }
 	
 	convertToLinkedList(axiom: string, iteration : number) {
+        this.nodes = [];
         for (let i = 0; i < axiom.length; i++) {
             const sym = axiom.charAt(i);
             let node = new SymbolNode(sym, iteration);
@@ -27,7 +28,7 @@ class LinkedList {
     }
 
     expandNode(new_sym : string, index : number, iteration : number) {
-        console.log("In Expand Node...");
+        //console.log("In Expand Node...");
         // Create new SymbolNode list from new symbols
         let nodesToInsert = [];
         for (let i = 0; i < new_sym.length; i++) {
@@ -56,6 +57,10 @@ class LinkedList {
             }
         }
         //console.log("Nodes: ", this.nodes);
+    }
+
+    update(axiom : string) {
+        this.convertToLinkedList(axiom, 0);
     }
 
     toString() {
