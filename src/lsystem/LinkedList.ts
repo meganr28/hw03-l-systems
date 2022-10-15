@@ -73,7 +73,7 @@ class LinkedList {
     }
 
 	print() {
-        console.log(this.toString());
+        console.log("Axiom: ", this.toString());
     }
 };
 

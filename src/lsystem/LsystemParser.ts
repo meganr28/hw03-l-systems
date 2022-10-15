@@ -18,7 +18,6 @@ export class ExpansionRule {
 export class ExpansionRuleMap {
 	expansionRules: Map<string, ExpansionRule> = new Map();
 
-  // TODO: clear map?
   addRule(rule : string, prob : number) {
     let split_rule = rule.split("=", 2);
 
@@ -101,7 +100,6 @@ class LsystemParser {
   parse() {
     //console.log("In Parsing...");
     //console.log("Axiom: ", this.axiom.nodes);
-    //console.log("Rules: ", this.grammar.expansionRules);
     //console.log("Num Iterations: ", this.iterations);
     for (let i = 0; i < this.iterations; i++) {
       //console.log("ITERATION: ", i);

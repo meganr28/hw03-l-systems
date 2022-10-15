@@ -6,14 +6,9 @@ class Turtle {
   orientation: vec3 = vec3.create();  // Orientation expressed as Euler Angles (X, Y, Z)
   depth: number = 0;
 
-  positions: Array<vec3>;
-  orientations: Array<vec3>;
-
   constructor(position: vec3, direction: vec3) {
-    this.position = position;
-    this.direction = direction;
-    this.positions = new Array();
-    this.orientations = new Array();
+    this.position = vec3.fromValues(position[0], position[1], position[2]);
+    this.direction = vec3.fromValues(direction[0], direction[1], direction[2]);
   }
 
   moveForward(length : number) {
@@ -22,9 +17,9 @@ class Turtle {
     vec3.add(this.position, this.position, vec3.multiply(this.direction, this.direction, vec3.fromValues(length, length, length)));
     //console.log("Move forward after: ", this.position[0], this.position[1], this.position[2]);
     // Add current position and orientation to vectors for instanced rendering
-    this.positions.push(vec3.fromValues(this.position[0], this.position[1], this.position[2]));
+    //this.positions.push(vec3.fromValues(this.position[0], this.position[1], this.position[2]));
     //console.log("Positions: ", this.positions);
-    this.orientations.push(vec3.fromValues(this.orientation[0], this.orientation[1], this.orientation[2]));
+    //this.orientations.push(vec3.fromValues(this.orientation[0], this.orientation[1], this.orientation[2]));
     //console.log("Orientations: ", this.orientations);
   }
 

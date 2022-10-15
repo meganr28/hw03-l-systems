@@ -46,11 +46,11 @@ function updateBuffers() {
   let offsetsArray = [];
   let colorsArray = [];
 
-  let n : number = lsystemRenderer.turt.positions.length;
+  let n : number = lsystemRenderer.positions.length;
   for (let k = 0; k < n; k++) {
-    offsetsArray.push(lsystemRenderer.turt.positions[k][0]);
-    offsetsArray.push(lsystemRenderer.turt.positions[k][1]);
-    offsetsArray.push(lsystemRenderer.turt.positions[k][2]);
+    offsetsArray.push(lsystemRenderer.positions[k][0]);
+    offsetsArray.push(lsystemRenderer.positions[k][1]);
+    offsetsArray.push(lsystemRenderer.positions[k][2]);
 
     colorsArray.push(1.0);
     colorsArray.push(1.0);
