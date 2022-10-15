@@ -6052,11 +6052,11 @@ let prevProbability1 = 1.0;
 function updateBuffers() {
     let offsetsArray = [];
     let colorsArray = [];
-    let n = lsystemRenderer.turt.positions.length;
+    let n = lsystemRenderer.positions.length;
     for (let k = 0; k < n; k++) {
-        offsetsArray.push(lsystemRenderer.turt.positions[k][0]);
-        offsetsArray.push(lsystemRenderer.turt.positions[k][1]);
-        offsetsArray.push(lsystemRenderer.turt.positions[k][2]);
+        offsetsArray.push(lsystemRenderer.positions[k][0]);
+        offsetsArray.push(lsystemRenderer.positions[k][1]);
+        offsetsArray.push(lsystemRenderer.positions[k][2]);
         colorsArray.push(1.0);
         colorsArray.push(1.0);
         colorsArray.push(1.0);
@@ -16754,6 +16754,8 @@ class LsystemRenderer {
         this.turt = new __WEBPACK_IMPORTED_MODULE_1__Turtle__["a" /* default */](__WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].fromValues(0.0, 0.0, 0.0), __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].fromValues(0.0, 1.0, 0.0));
         this.angle = angle;
         this.length = length;
+        this.positions = new Array();
+        this.orientations = new Array();
         // Init map symbols
         let pcond1 = new DrawingPostcondition(this.moveForward.bind(this), 1.0);
         let pcond2 = new DrawingPostcondition(this.rotateRight.bind(this), 1.0);
@@ -16793,18 +16795,18 @@ class LsystemRenderer {
         this.turt.direction = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].fromValues(0, 1, 0);
         this.turt.orientation = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].fromValues(0, 0, 0);
         this.turt.depth = 0;
-        this.turt.positions = [];
-        this.turt.orientations = [];
+        this.positions = [];
+        this.orientations = [];
         // Push initial position and orientation
-        this.turt.positions.push(__WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].fromValues(this.turt.position[0], this.turt.position[1], this.turt.position[2]));
-        this.turt.orientations.push(__WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].fromValues(this.turt.orientation[0], this.turt.orientation[1], this.turt.orientation[2]));
+        this.positions.push(__WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].fromValues(this.turt.position[0], this.turt.position[1], this.turt.position[2]));
+        this.orientations.push(__WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].fromValues(this.turt.orientation[0], this.turt.orientation[1], this.turt.orientation[2]));
     }
     render() {
         this.clearTurtleState();
         // Iterate through list of symbols 
         //console.log("Nodes to render: ", this.symbolList.nodes);
         for (let i = 0; i < this.symbolList.nodes.length; i++) {
-            console.log("Turtle Positions: ", this.turt.positions);
+            //console.log("Turtle Positions: ", this.positions);
             let sym = this.symbolList.nodes[i].character;
             // Query drawing rules map for drawing command that corresponds with symbol
             // If a command exists, execute it
@@ -16816,26 +16818,40 @@ class LsystemRenderer {
             }
             //console.log(i, sym, drawCmd);
             if (drawCmd) {
-                drawCmd();
+                let addOffset = drawCmd();
+                if (addOffset)
+                    this.addTurtleOffset();
             }
         }
     }
+    addTurtleOffset() {
+        //Add current position and orientation to vectors for instanced rendering
+        this.positions.push(__WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].fromValues(this.turt.position[0], this.turt.position[1], this.turt.position[2]));
+        //console.log("Positions: ", this.positions);
+        this.orientations.push(__WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].fromValues(this.turt.orientation[0], this.turt.orientation[1], this.turt.orientation[2]));
+        //console.log("Orientations: ", this.orientations);
+    }
     moveForward() {
         this.turt.moveForward(this.length);
+        return 1;
     }
     rotateLeft() {
         this.turt.rotateLeft(0, 0, this.angle);
+        return 0;
     }
     rotateRight() {
         this.turt.rotateRight(0, 0, this.angle);
+        return 0;
     }
     pushState() {
         let turtleState = new __WEBPACK_IMPORTED_MODULE_1__Turtle__["a" /* default */](this.turt.position, this.turt.direction);
         this.turtleStates.push(this.turt);
         this.turt = turtleState;
+        return 0;
     }
     popState() {
         this.turt = this.turtleStates.pop();
+        return 0;
     }
 }
 ;
@@ -16855,10 +16871,8 @@ class Turtle {
         this.direction = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].create(); // Orientation expressed as ray direction (not normalized)
         this.orientation = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].create(); // Orientation expressed as Euler Angles (X, Y, Z)
         this.depth = 0;
-        this.position = position;
-        this.direction = direction;
-        this.positions = new Array();
-        this.orientations = new Array();
+        this.position = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].fromValues(position[0], position[1], position[2]);
+        this.direction = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].fromValues(direction[0], direction[1], direction[2]);
     }
     moveForward(length) {
         //console.log("Move forward before: ", this.position[0], this.position[1], this.position[2]);
@@ -16866,9 +16880,9 @@ class Turtle {
         __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].add(this.position, this.position, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].multiply(this.direction, this.direction, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].fromValues(length, length, length)));
         //console.log("Move forward after: ", this.position[0], this.position[1], this.position[2]);
         // Add current position and orientation to vectors for instanced rendering
-        this.positions.push(__WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].fromValues(this.position[0], this.position[1], this.position[2]));
+        //this.positions.push(vec3.fromValues(this.position[0], this.position[1], this.position[2]));
         //console.log("Positions: ", this.positions);
-        this.orientations.push(__WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* vec3 */].fromValues(this.orientation[0], this.orientation[1], this.orientation[2]));
+        //this.orientations.push(vec3.fromValues(this.orientation[0], this.orientation[1], this.orientation[2]));
         //console.log("Orientations: ", this.orientations);
     }
     rotateDirection(angle) {
@@ -16924,7 +16938,6 @@ class ExpansionRuleMap {
     constructor() {
         this.expansionRules = new Map();
     }
-    // TODO: clear map?
     addRule(rule, prob) {
         let split_rule = rule.split("=", 2);
         let precondition = split_rule[0];
@@ -16993,7 +17006,6 @@ class LsystemParser {
     parse() {
         //console.log("In Parsing...");
         //console.log("Axiom: ", this.axiom.nodes);
-        //console.log("Rules: ", this.grammar.expansionRules);
         //console.log("Num Iterations: ", this.iterations);
         for (let i = 0; i < this.iterations; i++) {
             //console.log("ITERATION: ", i);
@@ -17090,7 +17102,7 @@ class LinkedList {
         return ll_string;
     }
     print() {
-        console.log(this.toString());
+        console.log("Axiom: ", this.toString());
     }
 }
 ;
