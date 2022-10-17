@@ -6040,13 +6040,13 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 // Define an object with application parameters and button callbacks
 // This will be referred to by dat.GUI's functions that add GUI elements.
 const controls = {
-    Iterations: 10.0,
+    Iterations: 8.0,
     Angle: 20.0,
     StepSize: 5.0,
-    Axiom: "FAFFA",
-    Rule_1: "A=F[+FA][-FA]\\",
+    Axiom: "FFFAFF",
+    Rule_1: "A=F[+FA][-FA]+F[-FA]+F",
     Probability_1: 0.6,
-    Rule_2: "A=F[&FA][^FA]/",
+    Rule_2: "A=F[&FA][^FA]&F[^FA]",
     Probability_2: 0.4,
     'UpdateLsystem': updateLsystem
 };
@@ -6059,13 +6059,13 @@ let lsystemParser;
 let lsystemRenderer;
 let axiom;
 // GUI parameters
-let prevIterations = 10.0;
+let prevIterations = 8.0;
 let prevAngle = 20.0;
 let prevStepSize = 4.0;
-let prevAxiom = "FFFA";
-let prevRule1 = "A=F[+FA][-FA]\\";
+let prevAxiom = "FFFAFF";
+let prevRule1 = "A=F[+FA][-FA]+F[-FA]";
 let prevProbability1 = 0.6;
-let prevRule2 = "A=F[&FA][^FA]/";
+let prevRule2 = "A=F[&FA][^FA]";
 let prevProbability2 = 0.4;
 // Color palette
 let lightPurple = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(0.91, 0.85, 1.0);
@@ -6095,7 +6095,7 @@ function updateBuffers() {
         let extraScale = 1.0;
         if (k < 5)
             extraScale *= 5.0;
-        let scl = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(3.0 * Math.pow(0.75, instance.depth), 3.0 * Math.pow(1.0, instance.depth), 3.0 * Math.pow(0.75, instance.depth));
+        let scl = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(3.0 * Math.pow(0.75, instance.depth), controls.StepSize * Math.pow(1.0, instance.depth), 3.0 * Math.pow(0.75, instance.depth));
         //console.log(instance.depth);
         // Transform rotation into quaternion
         let quat_rot = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* quat */].create();
@@ -6111,9 +6111,9 @@ function updateBuffers() {
         }
         let col = mix(darkPurple, lightPurple, (instance.depth / controls.Iterations));
         console.log("Color: ", col);
-        colorsArray.push(col[0] * 0.5);
-        colorsArray.push(col[1] * 0.5);
-        colorsArray.push(col[2] * 0.5);
+        colorsArray.push(col[0]);
+        colorsArray.push(col[1]);
+        colorsArray.push(col[2]);
         colorsArray.push(1.0);
         // colorsArray.push((k / n) * pos[1] / 5000.0);
         // colorsArray.push((k / n) * pos[1] / 5000.0);
@@ -6262,7 +6262,7 @@ function main() {
     const camera = new __WEBPACK_IMPORTED_MODULE_6__Camera__["a" /* default */](__WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(0, 0, 5), __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(0, 0, 0));
     const renderer = new __WEBPACK_IMPORTED_MODULE_5__rendering_gl_OpenGLRenderer__["a" /* default */](canvas);
     renderer.setClearColor(0.2, 0.2, 0.2, 1);
-    gl.enable(gl.BLEND);
+    //gl.enable(gl.BLEND);
     gl.blendFunc(gl.ONE, gl.ONE); // Additive blending
     const instancedShader = new __WEBPACK_IMPORTED_MODULE_8__rendering_gl_ShaderProgram__["b" /* default */]([
         new __WEBPACK_IMPORTED_MODULE_8__rendering_gl_ShaderProgram__["a" /* Shader */](gl.VERTEX_SHADER, __webpack_require__(76)),
@@ -6287,7 +6287,7 @@ function main() {
         //updateLsystem();
         renderer.clear();
         //gl.disable(gl.DEPTH_TEST);
-        //renderer.render(camera, sdf, [screenQuad]);
+        renderer.render(camera, sdf, [screenQuad]);
         // gl.enable(gl.DEPTH_TEST);
         renderer.render(camera, instancedShader, [
             cube,
@@ -16849,7 +16849,7 @@ class LsystemRenderer {
         this.symbolList = symbols;
         this.turtleStates = new Array();
         this.drawMap = new DrawingRuleMap();
-        this.turt = new __WEBPACK_IMPORTED_MODULE_1__Turtle__["b" /* default */](__WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(5.0, 0.0, -100.0), __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(0.0, 1.0, 0.0), __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(0.0, 0.0, 0.0));
+        this.turt = new __WEBPACK_IMPORTED_MODULE_1__Turtle__["b" /* default */](__WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(5.0, 0.0, -200.0), __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(0.0, 1.0, 0.0), __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(0.0, 0.0, 0.0));
         this.angle = angle;
         this.length = length;
         this.depth = 0;
@@ -16901,7 +16901,7 @@ class LsystemRenderer {
         // });
     }
     clearTurtleState() {
-        this.turt.position = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(5, 0, -100);
+        this.turt.position = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(5, 0, -200);
         this.turt.direction = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(0, 1, 0);
         this.turt.orientation = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(0, 0, 0);
         this.turt.depth = 0;
@@ -17436,7 +17436,7 @@ module.exports = "#version 300 es\n\nuniform mat4 u_ViewProj;\nuniform float u_T
 /* 77 */
 /***/ (function(module, exports) {
 
-module.exports = "#version 300 es\nprecision highp float;\n\nin vec4 fs_Col;\nin vec4 fs_Pos;\n\nout vec4 out_Col;\n\nvec3 noise3Dv(vec3 p) {\n    return fract(sin(vec3(dot(p, vec3(127.1, 311.7, 191.999)),\n                 dot(p, vec3(269.5,183.3,483.1)),\n                 dot(p, vec3(564.5,96.3,223.9))))\n                 * 43758.5453);\n}\n\nfloat worley3D(vec3 p) {\n    // Tile space\n    p *= 2.0;\n    vec3 pInt = floor(p);\n    vec3 pFract = fract(p);\n    float minDist = 1.0; // Minimum distance\n\n    // Iterate through neighboring cells to find closest point\n    for(int z = -1; z <= 1; ++z) {\n        for(int y = -1; y <= 1; ++y) {\n            for(int x = -1; x <= 1; ++x) {\n                vec3 neighbor = vec3(float(x), float(y), float(z)); \n                vec3 point = noise3Dv(pInt + neighbor); // Random point in neighboring cell\n                \n                // Distance between fragment and neighbor point\n                vec3 diff = neighbor + point - pFract; \n                float dist = length(diff); \n                minDist = min(minDist, dist);\n            }\n        }\n    }\n\n    // Set pixel brightness to distance between pixel and closest point\n    return minDist;\n}\n\nvoid main()\n{\n    //float dist = 1.0 - (length(fs_Pos.xyz) * 2.0);\n    out_Col = vec4(vec3(fs_Col.xyz * worley3D(0.02 * fs_Pos.xyz)), 0.2);\n}\n"
+module.exports = "#version 300 es\nprecision highp float;\n\nin vec4 fs_Col;\nin vec4 fs_Pos;\n\nout vec4 out_Col;\n\nvec3 noise3Dv(vec3 p) {\n    return fract(sin(vec3(dot(p, vec3(127.1, 311.7, 191.999)),\n                 dot(p, vec3(269.5,183.3,483.1)),\n                 dot(p, vec3(564.5,96.3,223.9))))\n                 * 43758.5453);\n}\n\nfloat worley3D(vec3 p) {\n    // Tile space\n    p *= 2.0;\n    vec3 pInt = floor(p);\n    vec3 pFract = fract(p);\n    float minDist = 1.0; // Minimum distance\n\n    // Iterate through neighboring cells to find closest point\n    for(int z = -1; z <= 1; ++z) {\n        for(int y = -1; y <= 1; ++y) {\n            for(int x = -1; x <= 1; ++x) {\n                vec3 neighbor = vec3(float(x), float(y), float(z)); \n                vec3 point = noise3Dv(pInt + neighbor); // Random point in neighboring cell\n                \n                // Distance between fragment and neighbor point\n                vec3 diff = neighbor + point - pFract; \n                float dist = length(diff); \n                minDist = min(minDist, dist);\n            }\n        }\n    }\n\n    // Set pixel brightness to distance between pixel and closest point\n    return minDist;\n}\n\nvoid main()\n{\n    //float dist = 1.0 - (length(fs_Pos.xyz) * 2.0);\n    out_Col = vec4(vec3(fs_Col.xyz), 1.0);\n}\n"
 
 /***/ }),
 /* 78 */
