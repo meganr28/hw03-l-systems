@@ -6040,12 +6040,15 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 // Define an object with application parameters and button callbacks
 // This will be referred to by dat.GUI's functions that add GUI elements.
 const controls = {
-    Iterations: 1,
-    Angle: 45.0,
-    StepSize: 2.0,
-    Axiom: "F",
-    Rule_1: "F=F[+F][-F]",
-    Probability_1: 1.0
+    Iterations: 10.0,
+    Angle: 20.0,
+    StepSize: 5.0,
+    Axiom: "FAFFA",
+    Rule_1: "A=F[+FA][-FA]\\",
+    Probability_1: 0.6,
+    Rule_2: "A=F[&FA][^FA]/",
+    Probability_2: 0.4,
+    'UpdateLsystem': updateLsystem
 };
 let square;
 let screenQuad;
@@ -6056,43 +6059,72 @@ let lsystemParser;
 let lsystemRenderer;
 let axiom;
 // GUI parameters
-let prevIterations = 1.0;
-let prevAngle = 45.0;
-let prevStepSize = 1.0;
-let prevAxiom = "F";
-let prevRule1 = "F=F[+F][-F]";
-let prevProbability1 = 1.0;
+let prevIterations = 10.0;
+let prevAngle = 20.0;
+let prevStepSize = 4.0;
+let prevAxiom = "FFFA";
+let prevRule1 = "A=F[+FA][-FA]\\";
+let prevProbability1 = 0.6;
+let prevRule2 = "A=F[&FA][^FA]/";
+let prevProbability2 = 0.4;
+// Color palette
+let lightPurple = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(0.91, 0.85, 1.0);
+let darkPurple = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(0.4, 0.3, 0.56);
+// Lerp function
+function mix(a, b, t) {
+    let m1 = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(1.0 - t, 1.0 - t, 1.0 - t);
+    let m2 = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(t, t, t);
+    //console.log(m1, m2);
+    let aCopy = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].create();
+    let bCopy = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].create();
+    let ret = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].create();
+    __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].add(ret, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].multiply(aCopy, a, m1), __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].multiply(bCopy, b, m2));
+    return ret;
+}
 function updateBuffers() {
     let offsetsArray = [];
     let colorsArray = [];
-    let n = lsystemRenderer.positions.length;
-    //console.log("Positions: ", lsystemRenderer.positions);
+    let n = lsystemRenderer.instances.length;
     for (let k = 0; k < n; k++) {
-        let pos = lsystemRenderer.positions[k];
-        let rot = lsystemRenderer.orientations[k];
-        let scl = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(1, lsystemRenderer.length, 1);
+        let instance = lsystemRenderer.instances[k];
+        let pos = instance.position;
+        //console.log("Position: ", pos);
+        let rot = instance.orientation;
+        //console.log("Rotation: ", rot);
+        //console.log("Iteration: ", instance.depth);
+        let extraScale = 1.0;
+        if (k < 5)
+            extraScale *= 5.0;
+        let scl = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(3.0 * Math.pow(0.75, instance.depth), 3.0 * Math.pow(1.0, instance.depth), 3.0 * Math.pow(0.75, instance.depth));
+        //console.log(instance.depth);
         // Transform rotation into quaternion
         let quat_rot = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* quat */].create();
         __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["c" /* quat */].fromEuler(quat_rot, rot[0], rot[1], rot[2]);
         let transform = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["b" /* mat4 */].create();
         __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["b" /* mat4 */].fromRotationTranslationScale(transform, quat_rot, pos, scl);
-        // Copy over matrix into offsets array
+        // Copy over matrix into offsets array one column at a time
         for (let m = 0; m < 16; m += 4) {
             offsetsArray.push(transform[m]);
             offsetsArray.push(transform[m + 1]);
             offsetsArray.push(transform[m + 2]);
             offsetsArray.push(transform[m + 3]);
         }
+        let col = mix(darkPurple, lightPurple, (instance.depth / controls.Iterations));
+        console.log("Color: ", col);
+        colorsArray.push(col[0] * 0.5);
+        colorsArray.push(col[1] * 0.5);
+        colorsArray.push(col[2] * 0.5);
         colorsArray.push(1.0);
-        colorsArray.push(1.0);
-        colorsArray.push(1.0);
-        colorsArray.push(1.0);
+        // colorsArray.push((k / n) * pos[1] / 5000.0);
+        // colorsArray.push((k / n) * pos[1] / 5000.0);
+        // colorsArray.push(1.0);
+        // colorsArray.push(1.0);
+        //console.log("Color: ", (k / n) * pos[1] / 5000.0);
     }
+    //console.log("Offsets array: ", offsetsArray);
     let offsets = new Float32Array(offsetsArray);
     let colors = new Float32Array(colorsArray);
-    //square.setInstanceVBOs(offsets, colors);
     cube.setInstanceVBOs(offsets, colors);
-    //square.setNumInstances(n);
     cube.setNumInstances(n);
 }
 function updateLsystem() {
@@ -6122,7 +6154,7 @@ function updateLsystem() {
     }
     if (controls.Rule_1 != prevRule1) {
         prevRule1 = controls.Rule_1;
-        lsystemParser.setRules([controls.Rule_1], [controls.Probability_1]);
+        lsystemParser.setRules([controls.Rule_1, controls.Rule_2], [controls.Probability_1, controls.Probability_2]);
         lsystemParser.clearAxiom(controls.Axiom);
         axiom = lsystemParser.parse();
         paramsDirty = 1;
@@ -6134,8 +6166,23 @@ function updateLsystem() {
         axiom = lsystemParser.parse();
         paramsDirty = 1;
     }
+    if (controls.Rule_2 != prevRule2) {
+        prevRule2 = controls.Rule_2;
+        lsystemParser.setRules([controls.Rule_1, controls.Rule_2], [controls.Probability_1, controls.Probability_2]);
+        lsystemParser.clearAxiom(controls.Axiom);
+        axiom = lsystemParser.parse();
+        paramsDirty = 1;
+    }
+    if (controls.Probability_2 != prevProbability2) {
+        prevProbability2 = controls.Probability_2;
+        lsystemParser.grammar.updateRuleProbability(controls.Rule_2, controls.Probability_2, 1);
+        lsystemParser.clearAxiom(controls.Axiom);
+        axiom = lsystemParser.parse();
+        paramsDirty = 1;
+    }
     if (paramsDirty) {
         lsystemRenderer.setAxiom(axiom);
+        //axiom.print();
         lsystemRenderer.render();
         updateBuffers();
     }
@@ -6174,9 +6221,9 @@ function loadScene() {
     square.setInstanceVBOs(offsets, colors);
     square.setNumInstances(n * n); // grid of "particles"*/
     // Test out Lsystem
-    lsystemParser = new __WEBPACK_IMPORTED_MODULE_11__lsystem_LsystemParser__["a" /* default */](controls.Axiom, [controls.Rule_1], [controls.Probability_1], controls.Iterations);
+    lsystemParser = new __WEBPACK_IMPORTED_MODULE_11__lsystem_LsystemParser__["a" /* default */](controls.Axiom, [controls.Rule_1, controls.Rule_2], [controls.Probability_1, controls.Probability_2], controls.Iterations);
     axiom = lsystemParser.parse();
-    axiom.print();
+    //axiom.print();
     //let symbolList = new LinkedList("F+F-F-F+F");
     lsystemRenderer = new __WEBPACK_IMPORTED_MODULE_10__lsystem_LsystemRenderer__["a" /* default */](axiom, controls.Angle, controls.StepSize);
     lsystemRenderer.render();
@@ -6198,6 +6245,9 @@ function main() {
     gui.add(controls, 'Axiom');
     gui.add(controls, 'Rule_1');
     gui.add(controls, 'Probability_1', 0.0, 1.0).step(0.01);
+    gui.add(controls, 'Rule_2');
+    gui.add(controls, 'Probability_2', 0.0, 1.0).step(0.01);
+    gui.add(controls, 'UpdateLsystem').listen();
     // get canvas and webgl context
     const canvas = document.getElementById('canvas');
     const gl = canvas.getContext('webgl2');
@@ -6222,16 +6272,23 @@ function main() {
         new __WEBPACK_IMPORTED_MODULE_8__rendering_gl_ShaderProgram__["a" /* Shader */](gl.VERTEX_SHADER, __webpack_require__(78)),
         new __WEBPACK_IMPORTED_MODULE_8__rendering_gl_ShaderProgram__["a" /* Shader */](gl.FRAGMENT_SHADER, __webpack_require__(79)),
     ]);
+    const sdf = new __WEBPACK_IMPORTED_MODULE_8__rendering_gl_ShaderProgram__["b" /* default */]([
+        new __WEBPACK_IMPORTED_MODULE_8__rendering_gl_ShaderProgram__["a" /* Shader */](gl.VERTEX_SHADER, __webpack_require__(80)),
+        new __WEBPACK_IMPORTED_MODULE_8__rendering_gl_ShaderProgram__["a" /* Shader */](gl.FRAGMENT_SHADER, __webpack_require__(81)),
+    ]);
     // This function will be called every frame
     function tick() {
         camera.update();
         stats.begin();
         instancedShader.setTime(time);
         flat.setTime(time++);
+        sdf.setTime(time++);
         gl.viewport(0, 0, window.innerWidth, window.innerHeight);
-        updateLsystem();
+        //updateLsystem();
         renderer.clear();
-        renderer.render(camera, flat, [screenQuad]);
+        //gl.disable(gl.DEPTH_TEST);
+        //renderer.render(camera, sdf, [screenQuad]);
+        // gl.enable(gl.DEPTH_TEST);
         renderer.render(camera, instancedShader, [
             cube,
         ]);
@@ -6245,11 +6302,13 @@ function main() {
         camera.setAspectRatio(window.innerWidth / window.innerHeight);
         camera.updateProjectionMatrix();
         flat.setDimensions(window.innerWidth, window.innerHeight);
+        sdf.setDimensions(window.innerWidth, window.innerHeight);
     }, false);
     renderer.setSize(window.innerWidth, window.innerHeight);
     camera.setAspectRatio(window.innerWidth / window.innerHeight);
     camera.updateProjectionMatrix();
     flat.setDimensions(window.innerWidth, window.innerHeight);
+    sdf.setDimensions(window.innerWidth, window.innerHeight);
     // Start the render loop
     tick();
 }
@@ -13385,7 +13444,7 @@ class Camera {
         this.fovy = 45;
         this.aspectRatio = 1;
         this.near = 0.1;
-        this.far = 1000;
+        this.far = 10000;
         this.position = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].create();
         this.direction = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].create();
         this.target = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].create();
@@ -13416,6 +13475,7 @@ class Camera {
         this.controls.tick();
         __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].add(this.target, this.position, this.direction);
         this.position = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(this.controls.eye[0], this.controls.eye[1], this.controls.eye[2]);
+        //console.log(this.position);
         this.target = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(this.controls.center[0], this.controls.center[1], this.controls.center[2]);
         __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["b" /* mat4 */].lookAt(this.viewMatrix, this.controls.eye, this.controls.center, this.controls.up);
         this.position = this.controls.eye;
@@ -16533,7 +16593,7 @@ class ShaderProgram {
         this.attrPos = __WEBPACK_IMPORTED_MODULE_1__globals__["a" /* gl */].getAttribLocation(this.prog, "vs_Pos");
         this.attrNor = __WEBPACK_IMPORTED_MODULE_1__globals__["a" /* gl */].getAttribLocation(this.prog, "vs_Nor");
         this.attrCol = __WEBPACK_IMPORTED_MODULE_1__globals__["a" /* gl */].getAttribLocation(this.prog, "vs_Col");
-        //this.attrTranslate = gl.getAttribLocation(this.prog, "vs_Translate");
+        this.attrTranslate = __WEBPACK_IMPORTED_MODULE_1__globals__["a" /* gl */].getAttribLocation(this.prog, "vs_Translate");
         this.attrUV = __WEBPACK_IMPORTED_MODULE_1__globals__["a" /* gl */].getAttribLocation(this.prog, "vs_UV");
         this.attrTransform = __WEBPACK_IMPORTED_MODULE_1__globals__["a" /* gl */].getAttribLocation(this.prog, "vs_Transform");
         this.unifModel = __WEBPACK_IMPORTED_MODULE_1__globals__["a" /* gl */].getUniformLocation(this.prog, "u_Model");
@@ -16544,6 +16604,7 @@ class ShaderProgram {
         this.unifEye = __WEBPACK_IMPORTED_MODULE_1__globals__["a" /* gl */].getUniformLocation(this.prog, "u_Eye");
         this.unifRef = __WEBPACK_IMPORTED_MODULE_1__globals__["a" /* gl */].getUniformLocation(this.prog, "u_Ref");
         this.unifUp = __WEBPACK_IMPORTED_MODULE_1__globals__["a" /* gl */].getUniformLocation(this.prog, "u_Up");
+        this.unifDimensions = __WEBPACK_IMPORTED_MODULE_1__globals__["a" /* gl */].getUniformLocation(this.prog, "u_Dimensions");
     }
     use() {
         if (activeProgram !== this.prog) {
@@ -16765,8 +16826,11 @@ class DrawingPostcondition {
 
 ;
 class DrawingRule {
-    constructor() {
+    constructor(pconds) {
         this.postconditions = [];
+        for (let i = 0; i < pconds.length; i++) {
+            this.postconditions.push(pconds[i]);
+        }
     }
 }
 /* unused harmony export DrawingRule */
@@ -16785,35 +16849,15 @@ class LsystemRenderer {
         this.symbolList = symbols;
         this.turtleStates = new Array();
         this.drawMap = new DrawingRuleMap();
-        this.turt = new __WEBPACK_IMPORTED_MODULE_1__Turtle__["a" /* default */](__WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(0.0, 0.0, 0.0), __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(0.0, 1.0, 0.0), __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(0.0, 0.0, 0.0));
+        this.turt = new __WEBPACK_IMPORTED_MODULE_1__Turtle__["b" /* default */](__WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(5.0, 0.0, -100.0), __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(0.0, 1.0, 0.0), __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(0.0, 0.0, 0.0));
         this.angle = angle;
         this.length = length;
+        this.depth = 0;
         this.positions = new Array();
         this.orientations = new Array();
-        // Init map symbols
-        let pcond1 = new DrawingPostcondition(this.moveForward.bind(this), 1.0);
-        let pcond2 = new DrawingPostcondition(this.rotateRight.bind(this), 1.0);
-        let pcond3 = new DrawingPostcondition(this.rotateLeft.bind(this), 1.0);
-        let pcond4 = new DrawingPostcondition(this.pushState.bind(this), 1.0);
-        let pcond5 = new DrawingPostcondition(this.popState.bind(this), 1.0);
-        let rule1 = new DrawingRule();
-        let rule2 = new DrawingRule();
-        let rule3 = new DrawingRule();
-        let rule4 = new DrawingRule();
-        let rule5 = new DrawingRule();
-        rule1.postconditions.push(pcond1);
-        rule2.postconditions.push(pcond2);
-        rule3.postconditions.push(pcond3);
-        rule4.postconditions.push(pcond4);
-        rule5.postconditions.push(pcond5);
-        this.drawMap.drawingRules.set('F', rule1);
-        this.drawMap.drawingRules.set('-', rule2);
-        this.drawMap.drawingRules.set('+', rule3);
-        this.drawMap.drawingRules.set('[', rule4);
-        this.drawMap.drawingRules.set(']', rule5);
-        /*this.drawMap.drawingRules.forEach((value: DrawingRule, key: string) => {
-            console.log(key, value.postconditions[0]);
-        });*/
+        this.instances = new Array();
+        // Initialize library of map symbols
+        this.initializeMap();
     }
     setAngle(angle) {
         this.angle = angle;
@@ -16824,16 +16868,49 @@ class LsystemRenderer {
     setStepSize(length) {
         this.length = length;
     }
+    initializeMap() {
+        let pcond1 = new DrawingPostcondition(this.moveForward.bind(this), 1.0);
+        let pcond2 = new DrawingPostcondition(this.rotateRight.bind(this), 1.0);
+        let pcond3 = new DrawingPostcondition(this.rotateLeft.bind(this), 1.0);
+        let pcond4 = new DrawingPostcondition(this.pitchDown.bind(this), 1.0);
+        let pcond5 = new DrawingPostcondition(this.pitchUp.bind(this), 1.0);
+        let pcond6 = new DrawingPostcondition(this.rollClockwise.bind(this), 1.0);
+        let pcond7 = new DrawingPostcondition(this.rollCounterClockwise.bind(this), 1.0);
+        let pcond8 = new DrawingPostcondition(this.pushState.bind(this), 1.0);
+        let pcond9 = new DrawingPostcondition(this.popState.bind(this), 1.0);
+        let rule1 = new DrawingRule([pcond1]);
+        let rule2 = new DrawingRule([pcond2]);
+        let rule3 = new DrawingRule([pcond3]);
+        let rule4 = new DrawingRule([pcond4]);
+        let rule5 = new DrawingRule([pcond5]);
+        let rule6 = new DrawingRule([pcond6]);
+        let rule7 = new DrawingRule([pcond7]);
+        let rule8 = new DrawingRule([pcond8]);
+        let rule9 = new DrawingRule([pcond9]);
+        this.drawMap.drawingRules.set('F', rule1);
+        this.drawMap.drawingRules.set('+', rule2);
+        this.drawMap.drawingRules.set('-', rule3);
+        this.drawMap.drawingRules.set('&', rule4);
+        this.drawMap.drawingRules.set('^', rule5);
+        this.drawMap.drawingRules.set('\\\\', rule6);
+        this.drawMap.drawingRules.set('/', rule7);
+        this.drawMap.drawingRules.set('[', rule8);
+        this.drawMap.drawingRules.set(']', rule9);
+        // this.drawMap.drawingRules.forEach((value: DrawingRule, key: string) => {
+        //     console.log(key, value.postconditions[0]);
+        // });
+    }
     clearTurtleState() {
-        this.turt.position = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(0, 0, 0);
+        this.turt.position = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(5, 0, -100);
         this.turt.direction = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(0, 1, 0);
         this.turt.orientation = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(0, 0, 0);
         this.turt.depth = 0;
         this.positions = [];
         this.orientations = [];
+        this.instances = [];
         // Push initial position and orientation
-        this.positions.push(__WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(this.turt.position[0], this.turt.position[1], this.turt.position[2]));
-        this.orientations.push(__WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(this.turt.orientation[0], this.turt.orientation[1], this.turt.orientation[2]));
+        //this.positions.push(vec3.fromValues(this.turt.position[0], this.turt.position[1], this.turt.position[2]));
+        //this.orientations.push(vec3.fromValues(this.turt.orientation[0], this.turt.orientation[1], this.turt.orientation[2]));
     }
     render() {
         this.clearTurtleState();
@@ -16854,15 +16931,17 @@ class LsystemRenderer {
             if (drawCmd) {
                 let addOffset = drawCmd();
                 if (addOffset)
-                    this.addTurtleOffset();
+                    this.addTurtleInstance(this.depth);
             }
         }
     }
-    addTurtleOffset() {
+    addTurtleInstance(iter) {
+        let turtleInstance = new __WEBPACK_IMPORTED_MODULE_1__Turtle__["a" /* TurtleInstance */](this.turt.position, this.turt.orientation, iter);
         //Add current position and orientation to vectors for instanced rendering
-        this.positions.push(__WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(this.turt.position[0], this.turt.position[1], this.turt.position[2]));
+        this.instances.push(turtleInstance);
+        //this.positions.push(vec3.fromValues(this.turt.position[0], this.turt.position[1], this.turt.position[2]));
         //console.log("Positions: ", this.positions);
-        this.orientations.push(__WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(this.turt.orientation[0], this.turt.orientation[1], this.turt.orientation[2]));
+        //this.orientations.push(vec3.fromValues(this.turt.orientation[0], this.turt.orientation[1], this.turt.orientation[2]));
         //console.log("Orientations: ", this.orientations);
     }
     moveForward() {
@@ -16870,21 +16949,41 @@ class LsystemRenderer {
         return 1;
     }
     rotateLeft() {
-        this.turt.rotateLeft(0, 0, this.angle);
+        this.turt.rotateLeft(this.angle);
         return 0;
     }
     rotateRight() {
-        this.turt.rotateRight(0, 0, this.angle);
+        this.turt.rotateRight(this.angle);
+        return 0;
+    }
+    pitchDown() {
+        this.turt.pitchDown(this.angle);
+        return 0;
+    }
+    pitchUp() {
+        this.turt.pitchUp(this.angle);
+        return 0;
+    }
+    rollClockwise() {
+        this.turt.rollClockwise(this.angle);
+        return 0;
+    }
+    rollCounterClockwise() {
+        this.turt.rollCounterClockwise(this.angle);
         return 0;
     }
     pushState() {
-        let turtleState = new __WEBPACK_IMPORTED_MODULE_1__Turtle__["a" /* default */](this.turt.position, this.turt.direction, this.turt.orientation);
+        let turtleState = new __WEBPACK_IMPORTED_MODULE_1__Turtle__["b" /* default */](this.turt.position, this.turt.direction, this.turt.orientation);
         this.turtleStates.push(this.turt);
         this.turt = turtleState;
+        this.depth++;
+        //console.log("Push depth: ", this.depth);
         return 0;
     }
     popState() {
         this.turt = this.turtleStates.pop();
+        this.depth--;
+        //console.log("Pop depth: ", this.depth);
         return 0;
     }
 }
@@ -16899,6 +16998,18 @@ class LsystemRenderer {
 "use strict";
 /* harmony import */ var __WEBPACK_IMPORTED_MODULE_0_gl_matrix__ = __webpack_require__(1);
 
+class TurtleInstance {
+    constructor(position, orientation, depth) {
+        this.position = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].create();
+        this.orientation = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].create();
+        this.depth = 0;
+        this.position = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(position[0], position[1], position[2]);
+        this.orientation = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(orientation[0], orientation[1], orientation[2]);
+        this.depth = depth;
+    }
+}
+/* harmony export (immutable) */ __webpack_exports__["a"] = TurtleInstance;
+
 class Turtle {
     constructor(position, direction, orientation) {
         this.position = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].create(); // Position of turtle (pivot point of cylinder)
@@ -16910,39 +17021,65 @@ class Turtle {
         this.orientation = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(orientation[0], orientation[1], orientation[2]);
     }
     moveForward(length) {
-        //console.log("Move forward before: ", this.position[0], this.position[1], this.position[2]);
-        // Move the turtle
-        __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].add(this.position, this.position, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].multiply(this.direction, this.direction, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(length, length, length)));
-        //console.log("Move forward after: ", this.position[0], this.position[1], this.position[2]);
-        // Add current position and orientation to vectors for instanced rendering
-        //this.positions.push(vec3.fromValues(this.position[0], this.position[1], this.position[2]));
-        //console.log("Positions: ", this.positions);
-        //this.orientations.push(vec3.fromValues(this.orientation[0], this.orientation[1], this.orientation[2]));
-        //console.log("Orientations: ", this.orientations);
+        //console.log("Move forward before: ", this.direction);
+        let dir = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].create();
+        __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].add(this.position, this.position, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].multiply(dir, this.direction, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(length, length, length)));
+        //console.log("Move forward after: ", this.direction);
     }
-    rotateDirection(angle) {
-        // TODO: ADD X, Y ROTATION TO THIS
+    rotateDirection(angle, axis) {
         let rotateMat = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["b" /* mat4 */].create();
         let dirCopy = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["e" /* vec4 */].fromValues(this.direction[0], this.direction[1], this.direction[2], 0.0);
-        // Create Z-rotation matrix that rotates vec4 by this.angle
-        __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["b" /* mat4 */].rotateZ(rotateMat, rotateMat, angle * (Math.PI / 180.0));
+        // Create rotation matrix that rotates vec4 by angle around axis
+        if (axis == 0) {
+            __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["b" /* mat4 */].rotateX(rotateMat, rotateMat, angle * (Math.PI / 180.0));
+        }
+        else if (axis == 1) {
+            __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["b" /* mat4 */].rotateY(rotateMat, rotateMat, angle * (Math.PI / 180.0));
+        }
+        else if (axis == 2) {
+            __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["b" /* mat4 */].rotateZ(rotateMat, rotateMat, angle * (Math.PI / 180.0));
+        }
         __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["e" /* vec4 */].transformMat4(dirCopy, dirCopy, rotateMat);
         // Place value into this.direction
-        this.direction = __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].normalize(this.direction, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(dirCopy[0], dirCopy[1], dirCopy[2]));
+        __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].normalize(this.direction, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(dirCopy[0], dirCopy[1], dirCopy[2]));
     }
-    rotateLeft(x, y, z) {
-        // Rotate direction vector 
-        this.rotateDirection(z);
-        __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].add(this.orientation, this.orientation, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(x, y, z));
+    rotateLeft(z) {
+        let rand = Math.random() * 2.0;
+        this.rotateDirection(z + rand, 2);
+        __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].add(this.orientation, this.orientation, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(0, 0, z + rand));
     }
-    rotateRight(x, y, z) {
-        // Rotate direction vector 
-        this.rotateDirection(-z);
-        __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].subtract(this.orientation, this.orientation, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(x, y, z));
+    rotateRight(z) {
+        let rand = Math.random() * 2.0;
+        this.rotateDirection(-z + rand, 2);
+        __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].subtract(this.orientation, this.orientation, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(0, 0, z + rand));
+    }
+    pitchUp(x) {
+        this.rotateDirection(x, 0);
+        //console.log("Pitch Up Before: ", this.orientation);
+        __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].add(this.orientation, this.orientation, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(x, 0, 0));
+        //console.log("Pitch Up After: ", this.orientation);
+    }
+    pitchDown(x) {
+        this.rotateDirection(-x, 0);
+        //console.log("Pitch Down Before: ", this.orientation);
+        __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].subtract(this.orientation, this.orientation, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(x, 0, 0));
+        //console.log("Pitch Down After: ", this.orientation);
+    }
+    rollCounterClockwise(y) {
+        this.rotateDirection(y, 1);
+        //console.log("Roll Counter Clockwise Before: ", this.orientation);
+        __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].add(this.orientation, this.orientation, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(0, y, 0));
+        //console.log("Roll Counter Clockwise After: ", this.orientation);
+    }
+    rollClockwise(y) {
+        this.rotateDirection(-y, 1);
+        //console.log("Roll Clockwise Before: ", this.orientation);
+        __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].subtract(this.orientation, this.orientation, __WEBPACK_IMPORTED_MODULE_0_gl_matrix__["d" /* vec3 */].fromValues(0, y, 0));
+        //console.log("Roll Clockwise After: ", this.orientation);
     }
 }
 ;
-/* harmony default export */ __webpack_exports__["a"] = (Turtle);
+/* harmony default export */ __webpack_exports__["b"] = (Turtle);
 
 
 /***/ }),
@@ -16985,20 +17122,24 @@ class ExpansionRuleMap {
             rule.postconditions.push(postcondition);
             this.expansionRules.set(precondition, rule);
         }
+        //console.log("Current rules: ", this.expansionRules);
     }
     addRules(new_rules, new_probs) {
+        //console.log("In add rules...");
+        //console.log("New rules size: ", new_rules.length);
         this.expansionRules.clear();
         for (let i = 0; i < new_rules.length; i++) {
             this.addRule(new_rules[i], new_probs[i]);
         }
-        // this.expansionRules.forEach((value: ExpansionRule, key: string) => {
-        //   console.log(key, value.postconditions[0]);
-        // });
+        this.expansionRules.forEach((value, key) => {
+            console.log(key, value.postconditions[0]);
+        });
     }
     updateRuleProbability(rule, prob, index) {
         let split_rule = rule.split("=", 2);
         let precondition = split_rule[0];
         let expRule = this.expansionRules.get(precondition);
+        //console.log("Update rule exp rule: ", expRule);
         if (expRule) {
             expRule.postconditions[index].probability = prob;
         }
@@ -17030,9 +17171,24 @@ class LsystemParser {
     }
     applyRule(precondition) {
         let expRule = this.grammar.expansionRules.get(precondition);
+        // If this rule does not have any postconditions (i.e. not added to map) then return
         if (!expRule)
             return "";
-        let postcondition = expRule.postconditions[0].sym; // TODO: choose based on probability, will need to iterate when there is more than one
+        //console.log("exp rule: ", expRule);
+        // Generate random number
+        let rand = Math.random();
+        let probability_sum = 0.0;
+        let postcondition = "";
+        //console.log("Postconditions length: ", expRule.postconditions.length);
+        //console.log("Rand: ", rand);
+        for (let i = 0; i < expRule.postconditions.length; i++) {
+            probability_sum += expRule.postconditions[i].probability;
+            if (rand < probability_sum) {
+                postcondition = expRule.postconditions[i].sym; // TODO: choose based on probability, will need to iterate when there is more than one
+                break;
+            }
+        }
+        //console.log("Postcondition: ", postcondition);
         return postcondition;
     }
     clearAxiom(axiom) {
@@ -17097,7 +17253,10 @@ class LinkedList {
         }
     }
     expandNode(new_sym, index, iteration) {
+        if (new_sym == "")
+            return;
         //console.log("In Expand Node...");
+        //console.log("New sym: ", new_sym);
         // Create new SymbolNode list from new symbols
         let nodesToInsert = [];
         for (let i = 0; i < new_sym.length; i++) {
@@ -17115,12 +17274,7 @@ class LinkedList {
                 this.nodes[index] = nodesToInsert[j];
             }
             else {
-                // if (j >= nodesSize) {
-                //     this.nodes.push(nodesToInsert[j]);
-                // }
-                // else {
                 this.nodes.splice(index + j, 0, nodesToInsert[j]);
-                // }     
             }
         }
         //console.log("Nodes: ", this.nodes);
@@ -17276,13 +17430,13 @@ class Cube extends __WEBPACK_IMPORTED_MODULE_1__rendering_gl_Drawable__["a" /* d
 /* 76 */
 /***/ (function(module, exports) {
 
-module.exports = "#version 300 es\n\nuniform mat4 u_ViewProj;\nuniform float u_Time;\n\nuniform mat3 u_CameraAxes; // Used for rendering particles as billboards (quads that are always looking at the camera)\n// gl_Position = center + vs_Pos.x * camRight + vs_Pos.y * camUp;\n\nin vec4 vs_Pos; // Non-instanced; each particle is the same quad drawn in a different place\nin vec4 vs_Nor; // Non-instanced, and presently unused\nin vec4 vs_Col; // An instanced rendering attribute; each particle instance has a different color\nin vec3 vs_Translate; // Another instance rendering attribute used to position each quad instance in the scene\nin vec2 vs_UV; // Non-instanced, and presently unused in main(). Feel free to use it for your meshes.\nin mat4 vs_Transform; // An instanced rendering attribute to transform the geometry \n\nout vec4 fs_Col;\nout vec4 fs_Pos;\n\nvoid main()\n{\n    fs_Col = vs_Col;\n    vec4 transformed_Pos = vs_Transform * vs_Pos;\n    fs_Pos = transformed_Pos;\n\n    vec3 offset = vs_Translate;\n    //offset.z = (sin((u_Time + offset.x) * 3.14159 * 0.1) + cos((u_Time + offset.y) * 3.14159 * 0.1)) * 1.5;\n\n    //vec3 billboardPos = offset + vs_Pos.x * u_CameraAxes[0] + vs_Pos.y * u_CameraAxes[1];\n\n    //gl_Position = u_ViewProj * vec4(offset + vs_Pos.xyz, 1.0);\n    gl_Position = u_ViewProj * transformed_Pos;\n}\n"
+module.exports = "#version 300 es\n\nuniform mat4 u_ViewProj;\nuniform float u_Time;\n\nuniform mat3 u_CameraAxes; // Used for rendering particles as billboards (quads that are always looking at the camera)\n// gl_Position = center + vs_Pos.x * camRight + vs_Pos.y * camUp;\n\nin vec4 vs_Pos; // Non-instanced; each particle is the same quad drawn in a different place\nin vec4 vs_Nor; // Non-instanced, and presently unused\nin vec4 vs_Col; // An instanced rendering attribute; each particle instance has a different color\nin vec3 vs_Translate; // Another instance rendering attribute used to position each quad instance in the scene\nin vec2 vs_UV; // Non-instanced, and presently unused in main(). Feel free to use it for your meshes.\nin mat4 vs_Transform; // An instanced rendering attribute to transform the geometry \n\nout vec4 fs_Col;\nout vec4 fs_Pos;\n\nvoid main()\n{\n    fs_Col = vs_Col;\n    vec4 transformed_Pos = vs_Transform * vs_Pos;\n    fs_Pos = vs_Pos;\n\n    gl_Position = u_ViewProj * transformed_Pos;\n}\n"
 
 /***/ }),
 /* 77 */
 /***/ (function(module, exports) {
 
-module.exports = "#version 300 es\nprecision highp float;\n\nin vec4 fs_Col;\nin vec4 fs_Pos;\n\nout vec4 out_Col;\n\nvoid main()\n{\n    //float dist = 1.0 - (length(fs_Pos.xyz) * 2.0);\n    out_Col = fs_Col;\n}\n"
+module.exports = "#version 300 es\nprecision highp float;\n\nin vec4 fs_Col;\nin vec4 fs_Pos;\n\nout vec4 out_Col;\n\nvec3 noise3Dv(vec3 p) {\n    return fract(sin(vec3(dot(p, vec3(127.1, 311.7, 191.999)),\n                 dot(p, vec3(269.5,183.3,483.1)),\n                 dot(p, vec3(564.5,96.3,223.9))))\n                 * 43758.5453);\n}\n\nfloat worley3D(vec3 p) {\n    // Tile space\n    p *= 2.0;\n    vec3 pInt = floor(p);\n    vec3 pFract = fract(p);\n    float minDist = 1.0; // Minimum distance\n\n    // Iterate through neighboring cells to find closest point\n    for(int z = -1; z <= 1; ++z) {\n        for(int y = -1; y <= 1; ++y) {\n            for(int x = -1; x <= 1; ++x) {\n                vec3 neighbor = vec3(float(x), float(y), float(z)); \n                vec3 point = noise3Dv(pInt + neighbor); // Random point in neighboring cell\n                \n                // Distance between fragment and neighbor point\n                vec3 diff = neighbor + point - pFract; \n                float dist = length(diff); \n                minDist = min(minDist, dist);\n            }\n        }\n    }\n\n    // Set pixel brightness to distance between pixel and closest point\n    return minDist;\n}\n\nvoid main()\n{\n    //float dist = 1.0 - (length(fs_Pos.xyz) * 2.0);\n    out_Col = vec4(vec3(fs_Col.xyz * worley3D(0.02 * fs_Pos.xyz)), 0.2);\n}\n"
 
 /***/ }),
 /* 78 */
@@ -17294,7 +17448,19 @@ module.exports = "#version 300 es\nprecision highp float;\n\n// The vertex shade
 /* 79 */
 /***/ (function(module, exports) {
 
-module.exports = "#version 300 es\nprecision highp float;\n\nuniform vec3 u_Eye, u_Ref, u_Up;\nuniform vec2 u_Dimensions;\nuniform float u_Time;\n\nin vec2 fs_Pos;\nout vec4 out_Col;\n\nvoid main() {\n  out_Col = vec4(0.5 * (fs_Pos + vec2(1.0)), 0.0, 1.0);\n}\n"
+module.exports = "#version 300 es\nprecision highp float;\n\nuniform vec3 u_Eye, u_Ref, u_Up;\nuniform vec2 u_Dimensions;\nuniform float u_Time;\n\nin vec2 fs_Pos;\nout vec4 out_Col;\n\nconst vec3 colors[3] = \nvec3[](\n  vec3(0.91, 0.85, 1.0),\n  vec3(0.13, 0.09, 0.18),\n  vec3(0.4, 0.3, 0.56));\n\nvoid main() {\n  vec2 uv = gl_FragCoord.xy / u_Dimensions.xy;\n  //out_Col = vec4(0.5 * (fs_Pos + vec2(1.0)), 0.0, 1.0);\n  out_Col = vec4(0.31, 0.20, 0.40, 1.0);\n}\n"
+
+/***/ }),
+/* 80 */
+/***/ (function(module, exports) {
+
+module.exports = "#version 300 es\nprecision highp float;\n\n// The vertex shader used to render the background of the scene\n\nin vec4 vs_Pos;\nout vec2 fs_Pos;\n\nvoid main() {\n  fs_Pos = vs_Pos.xy;\n  gl_Position = vs_Pos;\n}\n"
+
+/***/ }),
+/* 81 */
+/***/ (function(module, exports) {
+
+module.exports = "#version 300 es\nprecision highp float;\n\nuniform vec3 u_Eye, u_Ref, u_Up;\nuniform vec2 u_Dimensions;\nuniform float u_Time;\nuniform vec4 u_Color;\n\nin vec2 fs_Pos;\nout vec4 out_Col;\n\n#define EPSILON          0.01\n#define INFINITY         1000000.0\n#define MAX_STEPS        256\n#define MAX_DEPTH        100.0\n#define MAX_RAY_LENGTH   1000.0\n\n#define KEY_LIGHT        vec3(0.91, 0.8, 0.7) * 1.8\n#define FILL_LIGHT       vec3(0.91, 0.85, 1.0) * 0.2\n#define AMBIENT_LIGHT    vec3(0.91, 0.8, 0.7) * 0.2\n\n#define PI               3.1415926535897932384626433832795\n\nconst vec3 colors[3] = \nvec3[](\n  vec3(0.91, 0.85, 1.0),\n  vec3(0.14, 0.07, 0.2),\n  vec3(0.4, 0.3, 0.56));\n\nstruct Ray\n{\n    vec3 origin;\n    vec3 direction;\n};\n\nstruct Intersection\n{\n    vec3 point;\n    vec3 normal;\n    float t;\n};\n\nstruct Material\n{\n    int type;\n    vec3 color;\n};\n\nstruct DirectionalLight\n{\n    vec3 direction;\n    vec3 color;\n};\n\nmat3 rotateY3D(float angle)\n{\n    return mat3(cos(angle), 0, -sin(angle),\n                0, 1, 0, \n                sin(angle), 0, cos(angle));\n}\n\nmat3 identity()\n{\n    return mat3(1, 0, 0,\n                0, 1, 0, \n                0, 0, 1);\n}\n\nfloat noise1Df(float x) {\n    /*x = (x << 13) ^ x;\n    return float((1 - (x * (x * x * 15731 + 789221)\n            + 1376312589) & 0x7fffffff)\n            / 1073724);*/\n    return sin(2.0 * x) + sin(PI * x);\n}\n\nvec2 noise2Dv( vec2 p ) {\n    return fract(sin(vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5,183.3)))) * 43758.5453);\n}\n\nfloat noise2Df(vec2 p) {\n    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);\n}\n\nfloat cosineInterpolate(float a, float b, float t)\n{\n    float cos_t = (1.f - cos(t * PI)) * 0.5f;\n    return mix(a, b, cos_t);\n}\n\nfloat interpolateNoise1D(float x) {\n    int intX = int(floor(x));\n    float fractX = fract(x);\n\n    float v1 = noise1Df(float(intX));\n    float v2 = noise1Df(float(intX + 1));\n    return mix(v1, v2, fractX);\n}\n\nfloat fbm1D(float x) \n{\n    float total = 0.f;\n    float persistence = 0.5f;\n    int octaves = 8;\n\n    for(int i = 1; i <= octaves; i++) {\n        float freq = pow(2.f, float(i));\n        float amp = pow(persistence, float(i));\n\n        float perlin = interpolateNoise1D(x * freq);\n        total += amp * (0.5 * (perlin + 1.0));\n    }\n\n    return total;\n}\n\nfloat interpolateNoise2D(float x, float y) \n{\n    // Get integer and fractional components of current position\n    int intX = int(floor(x));\n    float fractX = fract(x);\n    int intY = int(floor(y));\n    float fractY = fract(y);\n\n    // Get noise value at each of the 4 vertices\n    float v1 = noise2Df(vec2(intX, intY));\n    float v2 = noise2Df(vec2(intX + 1, intY));\n    float v3 = noise2Df(vec2(intX, intY + 1));\n    float v4 = noise2Df(vec2(intX + 1, intY + 1));\n\n    // Interpolate in the X, Y directions\n    float i1 = cosineInterpolate(v1, v2, fractX);\n    float i2 = cosineInterpolate(v3, v4, fractX);\n    return cosineInterpolate(i1, i2, fractY);\n}\n\nfloat fbm2D(vec2 p) \n{\n    float total = 0.f;\n    float persistence = 0.5f;\n    int octaves = 4;\n\n    for(int i = 1; i <= octaves; i++)\n    {\n        float freq = pow(2.f, float(i));\n        float amp = pow(persistence, float(i));\n\n        float perlin = interpolateNoise2D(p.x * freq, p.y * freq);\n        total += amp * 0.5 * (perlin + 1.f);\n    }\n    return total;\n}\n\nfloat worley2D(vec2 p, int animate) {\n    // Tile space\n    p *= 2.0;\n    vec2 pInt = floor(p);\n    vec2 pFract = fract(p);\n    float minDist = 1.0; // Minimum distance\n\n    // Iterate through neighboring cells to find closest point\n    for(int z = -1; z <= 1; ++z) {\n        for(int x = -1; x <= 1; ++x) {\n            vec2 neighbor = vec2(float(x), float(z)); \n            vec2 point = noise2Dv(pInt + neighbor); // Random point in neighboring cell\n            if (animate == 1) point = 0.5 + 0.5 * sin(0.5 * u_Time * 0.1 + 6.2831 * point);\n            \n            // Distance between fragment and neighbor point\n            vec2 diff = neighbor + point - pFract; \n            float dist = length(diff); \n            minDist = min(minDist, dist);\n        }\n    }\n    // Set pixel brightness to distance between pixel and closest point\n    return minDist;\n}\n\nbool getRayLength(vec3 p, vec3 rayOrigin)\n{\n    return length(p - rayOrigin) > MAX_RAY_LENGTH;\n}\n\n// SDF functions\nfloat roundedBoxSDF(vec3 rayPos, vec3 objectPos, mat3 transform, vec3 b, float r)\n{\n    vec3 p = (rayPos - objectPos) * transform; //* rotateY3D(-0.528);\n    vec3 q = abs(p) - b;\n    return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0) - r;\n}\n\nfloat planeSDF(vec3 rayPos, float h)\n{\n    return rayPos.y - h; \n}\n\nfloat sdTriPrism(vec3 rayPos, vec3 objectPos, mat3 transform, vec2 h)\n{\n  vec3 q = abs(rayPos - objectPos) * transform;\n  return max(q.z-h.y,max(q.x*0.866025+rayPos.y*0.5,-rayPos.y)-h.x*0.5);\n}\n\nfloat groundSDF(vec3 rayPos, out Material mat)\n{\n    // Left wall\n    float wOffset = fbm2D(0.01 * rayPos.xz);\n    float yOffset = 200.f * wOffset;\n    float leftWall = roundedBoxSDF(rayPos, vec3(70.0, -275.0 + yOffset, -220.0), rotateY3D(0.708), vec3(50.5, 50.5, 0.5), 50.5);\n    float dMin = leftWall;\n\n    // Right wall\n    float rightWall = roundedBoxSDF(rayPos, vec3(-45.0, -275.0 + yOffset, -220.0), rotateY3D(0.908), vec3(50.5, 50.5, 0.5), 50.5);\n    dMin = min(dMin, rightWall);\n\n    // Ground\n    float ground = planeSDF(rayPos - 150.f * pow(wOffset, 0.8), -180.0);\n    dMin = min(dMin, ground);\n\n    // Assign color\n    mat.type = 3;\n    if (dMin == leftWall || dMin == rightWall) {\n      mat.color = mix(vec3(0.18, 0.14, 0.20), colors[2], smoothstep(0.4, 0.6, wOffset));\n    }\n    else {\n      mat.color = vec3(0.18, 0.14, 0.20);\n    }\n    return dMin;\n}\n\nfloat sceneSDF(vec3 rayPos, out Material mat)\n{\n    Material groundMat;\n    float ground = groundSDF(rayPos, groundMat);\n    float dMin = ground;\n\n    // Assign color\n    if (dMin == ground) {\n        mat.type = groundMat.type;\n        mat.color = groundMat.color;\n    }\n\n    return dMin;\n}\n\nfloat mountains(float x)\n{\n  return fbm1D(0.8 * x) - 0.36;\n}\n\nvec3 getBackgroundColor(vec2 uv)\n{\n    float noise = smoothstep(0.61, 0.7, fbm2D(uv));\n    vec3 mix1 = mix(colors[2], colors[1], smoothstep(-0.2, 0.1, uv.y));\n    vec3 mix2 = mix(colors[1], colors[2], smoothstep(0.3, 1.0, uv.y));\n\n    if (uv.y < mountains(uv.x)) {\n      return colors[2];\n    }\n    \n    return mix(mix1, mix2, 0.5);\n}\n\n// Function to get ray from uv coord (from Mushroom Lab)\nRay getRay(vec2 uv)\n{\n    Ray ray;\n\n    float aspect = u_Dimensions.x / u_Dimensions.y;\n    float len = tan(3.14159 * 0.125) * distance(u_Eye, u_Ref);\n    vec3 H = normalize(cross(vec3(0.0, 1.0, 0.0), u_Ref - u_Eye));\n    vec3 V = normalize(cross(H, u_Eye - u_Ref));\n    V *= len;\n    H *= len * aspect;\n    vec3 p = u_Ref + uv.x * H + uv.y * V;\n    vec3 dir = normalize(p - u_Eye);\n\n    ray.origin = u_Eye;\n    ray.direction = dir;\n    return ray;\n}\n\n// Estimate the normal at an intersection point\nvec3 estimateNormal(vec3 p)\n{\n    Material mat;\n    float gx = sceneSDF(vec3(p.x + EPSILON, p.y, p.z), mat) - sceneSDF(vec3(p.x - EPSILON, p.y, p.z), mat);\n    float gy = sceneSDF(vec3(p.x, p.y + EPSILON, p.z), mat) - sceneSDF(vec3(p.x, p.y - EPSILON, p.z), mat);\n    float gz = sceneSDF(vec3(p.x, p.y, p.z + EPSILON), mat) - sceneSDF(vec3(p.x, p.y, p.z - EPSILON), mat);\n    return normalize(vec3(gx, gy, gz));\n}\n\nIntersection raymarch(vec2 uv, Ray ray, out Material mat)\n{\n    Intersection intersection;\n\n    vec3 p = ray.origin;\n    for (int i = 0; i < MAX_STEPS; ++i)\n    {     \n        // If ray is too long, skip (avoid testing empty space)\n        if (getRayLength(p, ray.origin)) break; \n\n        float dist = sceneSDF(p, mat);\n        if (dist < EPSILON)\n        {\n            intersection.point = p;\n            intersection.normal = estimateNormal(p);\n            intersection.t = length(p - ray.origin);\n            return intersection;\n        }\n        if (intersection.t > MAX_DEPTH)\n        {\n            break;\n        }\n        p = p + dist * ray.direction;\n    }\n    intersection.t = -1.0;\n    return intersection;\n}\n\nvoid main() {\n\n    // Material base color (before shading)\n    vec3 albedo = vec3(0.5);\n    vec3 color = vec3(0.0);\n\n    // Lights\n    DirectionalLight lights[3];\n    lights[0] = DirectionalLight(normalize(vec3(-10.0, 20.0, -20.0)), KEY_LIGHT);\n    lights[1] = DirectionalLight(normalize(vec3(0.0, 1.0, 0.0)), FILL_LIGHT);\n    lights[2] = DirectionalLight(normalize(-vec3(-10.0, 0.0, -20.0)), AMBIENT_LIGHT);\n\n    // Raymarch scene\n    vec2 ndc = gl_FragCoord.xy / u_Dimensions.xy;\n    ndc = ndc * 2.0 - 1.0;\n    Ray ray = getRay(ndc);\n\n    Material mat;\n    Intersection isect = raymarch(ndc, ray, mat);\n\n    // Lighting calculations\n    if (isect.t > 0.0) \n    {\n        for (int i = 0; i < 3; i++)\n        {\n            float cosTheta = max(0.0, dot(isect.normal, lights[i].direction));\n            color += mat.color * lights[i].color * cosTheta;\n        }   \n    }\n    else \n    {\n        color = getBackgroundColor(ndc);\n    }\n\n    // Distance fog\n    vec3 fog_dist = exp(-0.001 * isect.t * vec3(1.0, 1.5, 1.7));\n    vec3 fog_t = smoothstep(0.0, 0.9, fog_dist);\n    color = mix(vec3(0.4, 0.25, 0.4), color, fog_t);\n\n    // Glowing light \n    vec2 uv = (gl_FragCoord.xy - 0.5 * u_Dimensions.xy) / u_Dimensions.y;\n    float dist = length(uv + vec2(-0.04, 0.1));\n\n    // Compute color (inverse square falloff)\n    // Additionally add an ease factor for a slight flicker around the stars\n    float ease = 0.5 * (sin(float(u_Time * 0.005)) + 1.f) + 0.7;\n    float light_ball = 0.01 * ease / dist;\n\n    color += light_ball;\n\n    // Compute final shaded color\n    out_Col = vec4(color.rgb, 1.0);\n}\n"
 
 /***/ })
 /******/ ]);
