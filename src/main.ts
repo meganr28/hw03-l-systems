@@ -12,16 +12,20 @@ import LinkedList from './lsystem/LinkedList';
 import LsystemRenderer from './lsystem/LsystemRenderer';
 import LsystemParser from './lsystem/LsystemParser';
 import Cube from './geometry/Cube';
+import { TurtleInstance } from './lsystem/Turtle';
 
 // Define an object with application parameters and button callbacks
 // This will be referred to by dat.GUI's functions that add GUI elements.
 const controls = {
-  Iterations: 1,
-  Angle: 45.0,
-  StepSize: 2.0,
-  Axiom: "F",
-  Rule_1: "F=F[+F][-F]",
-  Probability_1: 1.0
+  Iterations: 10.0,
+  Angle: 20.0,
+  StepSize: 5.0,
+  Axiom: "FAFFA",
+  Rule_1: "A=F[+FA][-FA]\\",
+  Probability_1: 0.6,
+  Rule_2: "A=F[&FA][^FA]/",
+  Probability_2: 0.4,
+  'UpdateLsystem' : updateLsystem
 };
 
 let square: Square;
@@ -35,23 +39,47 @@ let lsystemRenderer : LsystemRenderer;
 let axiom : LinkedList;
 
 // GUI parameters
-let prevIterations: number = 1.0;
-let prevAngle: number = 45.0;
-let prevStepSize: number = 1.0;
-let prevAxiom: string = "F";
-let prevRule1: string = "F=F[+F][-F]";
-let prevProbability1: number = 1.0;
+let prevIterations: number = 10.0;
+let prevAngle: number = 20.0;
+let prevStepSize: number = 4.0;
+let prevAxiom: string = "FFFA";
+let prevRule1: string = "A=F[+FA][-FA]\\";
+let prevProbability1: number = 0.6;
+let prevRule2: string = "A=F[&FA][^FA]/";
+let prevProbability2: number = 0.4;
+
+// Color palette
+let lightPurple = vec3.fromValues(0.91, 0.85, 1.0);
+let darkPurple = vec3.fromValues(0.4, 0.3, 0.56);
+
+// Lerp function
+function mix(a : vec3, b : vec3, t : number) {
+  let m1 = vec3.fromValues(1.0 - t, 1.0 - t, 1.0 - t);
+  let m2 = vec3.fromValues(t, t, t);
+  //console.log(m1, m2);
+  let aCopy : vec3 = vec3.create();
+  let bCopy : vec3 = vec3.create();
+  let ret : vec3 = vec3.create();
+  vec3.add(ret, vec3.multiply(aCopy, a, m1), vec3.multiply(bCopy, b, m2));
+  return ret;
+}
 
 function updateBuffers() {
   let offsetsArray = [];
   let colorsArray = [];
 
-  let n : number = lsystemRenderer.positions.length;
-  //console.log("Positions: ", lsystemRenderer.positions);
+  let n : number = lsystemRenderer.instances.length;
   for (let k = 0; k < n; k++) {
-    let pos : vec3 = lsystemRenderer.positions[k];
-    let rot : vec3 = lsystemRenderer.orientations[k];
-    let scl : vec3 = vec3.fromValues(1, lsystemRenderer.length, 1);
+    let instance : TurtleInstance = lsystemRenderer.instances[k];
+    let pos : vec3 = instance.position;
+    //console.log("Position: ", pos);
+    let rot : vec3 = instance.orientation;
+    //console.log("Rotation: ", rot);
+    //console.log("Iteration: ", instance.depth);
+    let extraScale = 1.0;
+    if (k < 5) extraScale *= 5.0;
+    let scl : vec3 = vec3.fromValues(3.0 * Math.pow(0.75, instance.depth), 3.0 * Math.pow(1.0, instance.depth), 3.0 * Math.pow(0.75, instance.depth));
+    //console.log(instance.depth);
 
     // Transform rotation into quaternion
     let quat_rot : quat = quat.create();
@@ -59,23 +87,32 @@ function updateBuffers() {
     let transform = mat4.create();
     mat4.fromRotationTranslationScale(transform, quat_rot, pos, scl);
 
-    // Copy over matrix into offsets array
+    // Copy over matrix into offsets array one column at a time
     for (let m = 0; m < 16; m += 4) {
       offsetsArray.push(transform[m]);
       offsetsArray.push(transform[m + 1]);
       offsetsArray.push(transform[m + 2]);
       offsetsArray.push(transform[m + 3]);
     }
+
+    let col : vec3 = mix(darkPurple, lightPurple, (instance.depth / controls.Iterations));
+    console.log("Color: ", col);
+    colorsArray.push(col[0] * 0.5);
+    colorsArray.push(col[1] * 0.5);
+    colorsArray.push(col[2] * 0.5);
     colorsArray.push(1.0);
-    colorsArray.push(1.0);
-    colorsArray.push(1.0);
-    colorsArray.push(1.0);
+
+    // colorsArray.push((k / n) * pos[1] / 5000.0);
+    // colorsArray.push((k / n) * pos[1] / 5000.0);
+    // colorsArray.push(1.0);
+    // colorsArray.push(1.0);
+
+    //console.log("Color: ", (k / n) * pos[1] / 5000.0);
   }
+  //console.log("Offsets array: ", offsetsArray);
   let offsets: Float32Array = new Float32Array(offsetsArray);
   let colors: Float32Array = new Float32Array(colorsArray);
-  //square.setInstanceVBOs(offsets, colors);
   cube.setInstanceVBOs(offsets, colors);
-  //square.setNumInstances(n);
   cube.setNumInstances(n);
 }
 
@@ -116,7 +153,7 @@ function updateLsystem() {
   if (controls.Rule_1 != prevRule1)
   {
     prevRule1 = controls.Rule_1;
-    lsystemParser.setRules([controls.Rule_1], [controls.Probability_1]);
+    lsystemParser.setRules([controls.Rule_1, controls.Rule_2], [controls.Probability_1, controls.Probability_2]);
     lsystemParser.clearAxiom(controls.Axiom);
     axiom = lsystemParser.parse();
     paramsDirty = 1;
@@ -131,8 +168,27 @@ function updateLsystem() {
     paramsDirty = 1;
   }
 
+  if (controls.Rule_2 != prevRule2)
+  {
+    prevRule2 = controls.Rule_2;
+    lsystemParser.setRules([controls.Rule_1, controls.Rule_2], [controls.Probability_1, controls.Probability_2]);
+    lsystemParser.clearAxiom(controls.Axiom);
+    axiom = lsystemParser.parse();
+    paramsDirty = 1;
+  }
+
+  if (controls.Probability_2 != prevProbability2)
+  {
+    prevProbability2 = controls.Probability_2;
+    lsystemParser.grammar.updateRuleProbability(controls.Rule_2, controls.Probability_2, 1);
+    lsystemParser.clearAxiom(controls.Axiom);
+    axiom = lsystemParser.parse();
+    paramsDirty = 1;
+  }
+
   if (paramsDirty) {
     lsystemRenderer.setAxiom(axiom);
+    //axiom.print();
     lsystemRenderer.render();
     updateBuffers();
   }
@@ -174,9 +230,9 @@ function loadScene() {
   square.setNumInstances(n * n); // grid of "particles"*/
 
   // Test out Lsystem
-  lsystemParser = new LsystemParser(controls.Axiom, [controls.Rule_1], [controls.Probability_1], controls.Iterations);
+  lsystemParser = new LsystemParser(controls.Axiom, [controls.Rule_1, controls.Rule_2], [controls.Probability_1, controls.Probability_2], controls.Iterations);
   axiom = lsystemParser.parse();
-  axiom.print();
+  //axiom.print();
 
   //let symbolList = new LinkedList("F+F-F-F+F");
   lsystemRenderer = new LsystemRenderer(axiom, controls.Angle, controls.StepSize);
@@ -201,6 +257,9 @@ function main() {
   gui.add(controls, 'Axiom');
   gui.add(controls, 'Rule_1');
   gui.add(controls, 'Probability_1', 0.0, 1.0).step(0.01);
+  gui.add(controls, 'Rule_2');
+  gui.add(controls, 'Probability_2', 0.0, 1.0).step(0.01);
+  gui.add(controls, 'UpdateLsystem').listen();
 
   // get canvas and webgl context
   const canvas = <HTMLCanvasElement> document.getElementById('canvas');
@@ -232,16 +291,24 @@ function main() {
     new Shader(gl.FRAGMENT_SHADER, require('./shaders/flat-frag.glsl')),
   ]);
 
+  const sdf = new ShaderProgram([
+    new Shader(gl.VERTEX_SHADER, require('./shaders/sdf-vert.glsl')),
+    new Shader(gl.FRAGMENT_SHADER, require('./shaders/sdf-frag.glsl')),
+  ]);
+
   // This function will be called every frame
   function tick() {
     camera.update();
     stats.begin();
     instancedShader.setTime(time);
     flat.setTime(time++);
+    sdf.setTime(time++);
     gl.viewport(0, 0, window.innerWidth, window.innerHeight);
-    updateLsystem();
+    //updateLsystem();
     renderer.clear();
-    renderer.render(camera, flat, [screenQuad]);
+    //gl.disable(gl.DEPTH_TEST);
+    //renderer.render(camera, sdf, [screenQuad]);
+    // gl.enable(gl.DEPTH_TEST);
     renderer.render(camera, instancedShader, [
       cube,
     ]);
@@ -257,12 +324,14 @@ function main() {
     camera.setAspectRatio(window.innerWidth / window.innerHeight);
     camera.updateProjectionMatrix();
     flat.setDimensions(window.innerWidth, window.innerHeight);
+    sdf.setDimensions(window.innerWidth, window.innerHeight);
   }, false);
 
   renderer.setSize(window.innerWidth, window.innerHeight);
   camera.setAspectRatio(window.innerWidth / window.innerHeight);
   camera.updateProjectionMatrix();
   flat.setDimensions(window.innerWidth, window.innerHeight);
+  sdf.setDimensions(window.innerWidth, window.innerHeight);
 
   // Start the render loop
   tick();

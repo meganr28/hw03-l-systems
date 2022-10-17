@@ -28,7 +28,9 @@ class LinkedList {
     }
 
     expandNode(new_sym : string, index : number, iteration : number) {
+        if (new_sym == "") return;
         //console.log("In Expand Node...");
+        //console.log("New sym: ", new_sym);
         // Create new SymbolNode list from new symbols
         let nodesToInsert = [];
         for (let i = 0; i < new_sym.length; i++) {
@@ -48,12 +50,7 @@ class LinkedList {
                 this.nodes[index] = nodesToInsert[j];
             }
             else {
-                // if (j >= nodesSize) {
-                //     this.nodes.push(nodesToInsert[j]);
-                // }
-                // else {
-                    this.nodes.splice(index + j, 0, nodesToInsert[j]);
-                // }     
+                this.nodes.splice(index + j, 0, nodesToInsert[j]);    
             }
         }
         //console.log("Nodes: ", this.nodes);

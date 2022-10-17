@@ -52,7 +52,7 @@ class ShaderProgram {
     this.attrPos = gl.getAttribLocation(this.prog, "vs_Pos");
     this.attrNor = gl.getAttribLocation(this.prog, "vs_Nor");
     this.attrCol = gl.getAttribLocation(this.prog, "vs_Col");
-    //this.attrTranslate = gl.getAttribLocation(this.prog, "vs_Translate");
+    this.attrTranslate = gl.getAttribLocation(this.prog, "vs_Translate");
     this.attrUV = gl.getAttribLocation(this.prog, "vs_UV");
     this.attrTransform = gl.getAttribLocation(this.prog, "vs_Transform");
     this.unifModel      = gl.getUniformLocation(this.prog, "u_Model");
@@ -63,6 +63,7 @@ class ShaderProgram {
     this.unifEye   = gl.getUniformLocation(this.prog, "u_Eye");
     this.unifRef   = gl.getUniformLocation(this.prog, "u_Ref");
     this.unifUp   = gl.getUniformLocation(this.prog, "u_Up");
+    this.unifDimensions = gl.getUniformLocation(this.prog, "u_Dimensions");
   }
 
   use() {
