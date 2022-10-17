@@ -42,5 +42,5 @@ float worley3D(vec3 p) {
 void main()
 {
     //float dist = 1.0 - (length(fs_Pos.xyz) * 2.0);
-    out_Col = vec4(vec3(fs_Col.xyz * worley3D(0.02 * fs_Pos.xyz)), 0.2);
+    out_Col = vec4(vec3(fs_Col.xyz), 1.0);
 }

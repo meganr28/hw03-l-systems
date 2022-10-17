@@ -17,13 +17,13 @@ import { TurtleInstance } from './lsystem/Turtle';
 // Define an object with application parameters and button callbacks
 // This will be referred to by dat.GUI's functions that add GUI elements.
 const controls = {
-  Iterations: 10.0,
+  Iterations: 8.0,
   Angle: 20.0,
   StepSize: 5.0,
-  Axiom: "FAFFA",
-  Rule_1: "A=F[+FA][-FA]\\",
+  Axiom: "FFFAFF",
+  Rule_1: "A=F[+FA][-FA]+F[-FA]+F",
   Probability_1: 0.6,
-  Rule_2: "A=F[&FA][^FA]/",
+  Rule_2: "A=F[&FA][^FA]&F[^FA]",
   Probability_2: 0.4,
   'UpdateLsystem' : updateLsystem
 };
@@ -39,13 +39,13 @@ let lsystemRenderer : LsystemRenderer;
 let axiom : LinkedList;
 
 // GUI parameters
-let prevIterations: number = 10.0;
+let prevIterations: number = 8.0;
 let prevAngle: number = 20.0;
 let prevStepSize: number = 4.0;
-let prevAxiom: string = "FFFA";
-let prevRule1: string = "A=F[+FA][-FA]\\";
+let prevAxiom: string = "FFFAFF";
+let prevRule1: string = "A=F[+FA][-FA]+F[-FA]";
 let prevProbability1: number = 0.6;
-let prevRule2: string = "A=F[&FA][^FA]/";
+let prevRule2: string = "A=F[&FA][^FA]";
 let prevProbability2: number = 0.4;
 
 // Color palette
@@ -78,7 +78,7 @@ function updateBuffers() {
     //console.log("Iteration: ", instance.depth);
     let extraScale = 1.0;
     if (k < 5) extraScale *= 5.0;
-    let scl : vec3 = vec3.fromValues(3.0 * Math.pow(0.75, instance.depth), 3.0 * Math.pow(1.0, instance.depth), 3.0 * Math.pow(0.75, instance.depth));
+    let scl : vec3 = vec3.fromValues(3.0 * Math.pow(0.75, instance.depth), controls.StepSize * Math.pow(1.0, instance.depth), 3.0 * Math.pow(0.75, instance.depth));
     //console.log(instance.depth);
 
     // Transform rotation into quaternion
@@ -97,9 +97,9 @@ function updateBuffers() {
 
     let col : vec3 = mix(darkPurple, lightPurple, (instance.depth / controls.Iterations));
     console.log("Color: ", col);
-    colorsArray.push(col[0] * 0.5);
-    colorsArray.push(col[1] * 0.5);
-    colorsArray.push(col[2] * 0.5);
+    colorsArray.push(col[0]);
+    colorsArray.push(col[1]);
+    colorsArray.push(col[2]);
     colorsArray.push(1.0);
 
     // colorsArray.push((k / n) * pos[1] / 5000.0);
@@ -278,7 +278,7 @@ function main() {
 
   const renderer = new OpenGLRenderer(canvas);
   renderer.setClearColor(0.2, 0.2, 0.2, 1);
-  gl.enable(gl.BLEND);
+  //gl.enable(gl.BLEND);
   gl.blendFunc(gl.ONE, gl.ONE); // Additive blending
 
   const instancedShader = new ShaderProgram([
@@ -307,7 +307,7 @@ function main() {
     //updateLsystem();
     renderer.clear();
     //gl.disable(gl.DEPTH_TEST);
-    //renderer.render(camera, sdf, [screenQuad]);
+    renderer.render(camera, sdf, [screenQuad]);
     // gl.enable(gl.DEPTH_TEST);
     renderer.render(camera, instancedShader, [
       cube,

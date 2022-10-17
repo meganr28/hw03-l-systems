@@ -43,7 +43,7 @@ class LsystemRenderer {
     this.symbolList = symbols;
     this.turtleStates = new Array();
     this.drawMap = new DrawingRuleMap();
-    this.turt = new Turtle(vec3.fromValues(5.0, 0.0, -100.0), vec3.fromValues(0.0, 1.0, 0.0), vec3.fromValues(0.0, 0.0, 0.0));
+    this.turt = new Turtle(vec3.fromValues(5.0, 0.0, -200.0), vec3.fromValues(0.0, 1.0, 0.0), vec3.fromValues(0.0, 0.0, 0.0));
     this.angle = angle;
     this.length = length;
     this.depth = 0;
@@ -105,7 +105,7 @@ class LsystemRenderer {
   }
 
   clearTurtleState() {
-    this.turt.position = vec3.fromValues(5, 0, -100);     
+    this.turt.position = vec3.fromValues(5, 0, -200);     
     this.turt.direction = vec3.fromValues(0, 1, 0);   
     this.turt.orientation = vec3.fromValues(0, 0, 0); 
     this.turt.depth = 0;
