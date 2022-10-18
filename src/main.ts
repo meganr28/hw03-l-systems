@@ -96,7 +96,7 @@ function updateBuffers() {
     }
 
     let col : vec3 = mix(darkPurple, lightPurple, (instance.depth / controls.Iterations));
-    console.log("Color: ", col);
+    //console.log("Color: ", col);
     colorsArray.push(col[0]);
     colorsArray.push(col[1]);
     colorsArray.push(col[2]);

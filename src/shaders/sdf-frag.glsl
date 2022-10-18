@@ -52,11 +52,25 @@ struct DirectionalLight
     vec3 color;
 };
 
+mat3 rotateX3D(float angle)
+{
+    return mat3(1, 0, 0,
+                0, cos(angle), sin(angle), 
+                0, -sin(angle), cos(angle));
+}
+
 mat3 rotateY3D(float angle)
 {
     return mat3(cos(angle), 0, -sin(angle),
                 0, 1, 0, 
                 sin(angle), 0, cos(angle));
+}
+
+mat3 rotateZ3D(float angle)
+{
+    return mat3(cos(angle), sin(angle), 0,
+                -sin(angle), cos(angle), 0, 
+                0, 0, 1);
 }
 
 mat3 identity()
@@ -193,17 +207,28 @@ float planeSDF(vec3 rayPos, float h)
     return rayPos.y - h; 
 }
 
-float sdTriPrism(vec3 rayPos, vec3 objectPos, mat3 transform, vec2 h)
+float rhombusSDF(vec3 rayPos, vec3 objectPos, mat3 transform, float la, float lb, float h, float ra)
 {
-  vec3 q = abs(rayPos - objectPos) * transform;
-  return max(q.z-h.y,max(q.x*0.866025+rayPos.y*0.5,-rayPos.y)-h.x*0.5);
+    vec3 p = abs(rayPos - objectPos) * transform;
+    vec2 b = vec2(la,lb);
+    float f = clamp((dot(b, b-2.0*p.xz)) / dot(b, b), -1.0, 1.0); 
+    vec2 q = vec2(length(p.xz - 0.5 * b * vec2(1.0 - f, 1.0 + f)) * sign(p.x * b.y + p.z * b.x - b.x * b.y) - ra, p.y - h);
+    return min(max(q.x, q.y), 0.0) + length(max(q, 0.0));
+}
+
+float piecesSDF(vec3 rayPos, out Material mat)
+{
+    mat3 transform = rotateY3D(1.708) * rotateZ3D(1.408);
+    float piece1 = rhombusSDF(rayPos, vec3(0.0, -0.7, 5.0), transform, 0.6, 0.1, 0.02, 0.02);
+    mat.color = vec3(1.0, 0.0, 0.0);
+    return piece1;
 }
 
 float groundSDF(vec3 rayPos, out Material mat)
 {
     // Left wall
-    float wOffset = fbm2D(0.01 * rayPos.xz);
-    float yOffset = 200.f * wOffset;
+    float noise = fbm2D(0.01 * rayPos.xz);
+    float yOffset = 200.f * noise;
     float leftWall = roundedBoxSDF(rayPos, vec3(70.0, -275.0 + yOffset, -220.0), rotateY3D(0.708), vec3(50.5, 50.5, 0.5), 50.5);
     float dMin = leftWall;
 
@@ -212,13 +237,13 @@ float groundSDF(vec3 rayPos, out Material mat)
     dMin = min(dMin, rightWall);
 
     // Ground
-    float ground = planeSDF(rayPos - 150.f * pow(wOffset, 0.8), -180.0);
+    float ground = planeSDF(rayPos - 150.f * pow(noise, 0.8), -180.0);
     dMin = min(dMin, ground);
 
     // Assign color
     mat.type = 3;
     if (dMin == leftWall || dMin == rightWall) {
-      mat.color = mix(vec3(0.18, 0.14, 0.20), colors[2], smoothstep(0.4, 0.6, wOffset));
+      mat.color = mix(vec3(0.18, 0.14, 0.20), colors[2], smoothstep(0.4, 0.6, noise));
     }
     else {
       mat.color = vec3(0.18, 0.14, 0.20);
@@ -232,10 +257,18 @@ float sceneSDF(vec3 rayPos, out Material mat)
     float ground = groundSDF(rayPos, groundMat);
     float dMin = ground;
 
+    Material piecesMat;
+    float pieces = piecesSDF(rayPos, piecesMat);
+    dMin = min(ground, pieces);
+
     // Assign color
     if (dMin == ground) {
         mat.type = groundMat.type;
         mat.color = groundMat.color;
+    }
+    else {
+        mat.type = piecesMat.type;
+        mat.color = piecesMat.color;
     }
 
     return dMin;
