@@ -1,6 +1,6 @@
 import {vec3, mat4} from 'gl-matrix';
 import LinkedList from './LinkedList';
-import Turtle, { TurtleInstance } from "./Turtle";
+import Turtle, { LeafInstance, TurtleInstance } from "./Turtle";
 
 export class DrawingPostcondition {
   drawCmd: any;
@@ -34,12 +34,14 @@ class LsystemRenderer {
   angle: number;
   length: number;
   depth: number;
+  leafDensity: number;
 
   positions: Array<vec3>;
   orientations: Array<vec3>;
   instances: Array<TurtleInstance>;
+  leaves: Array<LeafInstance>;
 
-  constructor(symbols: LinkedList, angle : number, length: number) {
+  constructor(symbols: LinkedList, angle : number, length: number, leafDensity: number) {
     this.symbolList = symbols;
     this.turtleStates = new Array();
     this.drawMap = new DrawingRuleMap();
@@ -47,10 +49,12 @@ class LsystemRenderer {
     this.angle = angle;
     this.length = length;
     this.depth = 0;
+    this.leafDensity = leafDensity;
 
     this.positions = new Array();
     this.orientations = new Array();
     this.instances = new Array();
+    this.leaves = new Array();
 
     // Initialize library of map symbols
     this.initializeMap();
@@ -62,6 +66,10 @@ class LsystemRenderer {
 
   setAxiom(axiom : LinkedList) {
     this.symbolList = axiom;
+  }
+
+  setLeafDensity(density: number) {
+    this.leafDensity = density;
   }
 
   setStepSize(length : number) {
@@ -78,6 +86,7 @@ class LsystemRenderer {
     let pcond7 = new DrawingPostcondition(this.rollCounterClockwise.bind(this), 1.0); 
     let pcond8 = new DrawingPostcondition(this.pushState.bind(this), 1.0);
     let pcond9 = new DrawingPostcondition(this.popState.bind(this), 1.0);
+    let pcond10 = new DrawingPostcondition(this.addLeaf.bind(this), 1.0);
 
     let rule1 = new DrawingRule([pcond1]);
     let rule2 = new DrawingRule([pcond2]);
@@ -88,6 +97,7 @@ class LsystemRenderer {
     let rule7 = new DrawingRule([pcond7]);
     let rule8 = new DrawingRule([pcond8]);
     let rule9 = new DrawingRule([pcond9]);
+    let rule10 = new DrawingRule([pcond10]);
 
     this.drawMap.drawingRules.set('F', rule1);
     this.drawMap.drawingRules.set('+', rule2);
@@ -98,6 +108,7 @@ class LsystemRenderer {
     this.drawMap.drawingRules.set('/', rule7);
     this.drawMap.drawingRules.set('[', rule8);
     this.drawMap.drawingRules.set(']', rule9);
+    this.drawMap.drawingRules.set('L', rule10);
 
     // this.drawMap.drawingRules.forEach((value: DrawingRule, key: string) => {
     //     console.log(key, value.postconditions[0]);
@@ -113,6 +124,7 @@ class LsystemRenderer {
     this.positions = [];
     this.orientations = [];
     this.instances = [];
+    this.leaves = [];
 
     // Push initial position and orientation
     //this.positions.push(vec3.fromValues(this.turt.position[0], this.turt.position[1], this.turt.position[2]));
@@ -142,14 +154,20 @@ class LsystemRenderer {
     }
   }
 
+  addLeaf() {
+    let rand : number = Math.random();
+    // Find random angle
+    let rand_angle : number = rand * 90.0;
+    if (rand < this.leafDensity) {
+      let leafInstance : LeafInstance = new LeafInstance(this.turt.position, vec3.add(this.turt.orientation, this.turt.orientation, vec3.fromValues(rand_angle + 20, 0, rand_angle)));
+      this.leaves.push(leafInstance);
+    }
+  }
+
   addTurtleInstance(iter : number) {
     let turtleInstance : TurtleInstance = new TurtleInstance(this.turt.position, this.turt.orientation, iter);
-    //Add current position and orientation to vectors for instanced rendering
+    // Add current position and orientation to vectors for instanced rendering
     this.instances.push(turtleInstance);
-    //this.positions.push(vec3.fromValues(this.turt.position[0], this.turt.position[1], this.turt.position[2]));
-    //console.log("Positions: ", this.positions);
-    //this.orientations.push(vec3.fromValues(this.turt.orientation[0], this.turt.orientation[1], this.turt.orientation[2]));
-    //console.log("Orientations: ", this.orientations);
   }
 
   moveForward() {

@@ -12,7 +12,8 @@ import LinkedList from './lsystem/LinkedList';
 import LsystemRenderer from './lsystem/LsystemRenderer';
 import LsystemParser from './lsystem/LsystemParser';
 import Cube from './geometry/Cube';
-import { TurtleInstance } from './lsystem/Turtle';
+import { LeafInstance, TurtleInstance } from './lsystem/Turtle';
+import Icosphere from './geometry/Icosphere';
 
 // Define an object with application parameters and button callbacks
 // This will be referred to by dat.GUI's functions that add GUI elements.
@@ -20,11 +21,16 @@ const controls = {
   Iterations: 8.0,
   Angle: 20.0,
   StepSize: 5.0,
-  Axiom: "FFFAFF",
-  Rule_1: "A=F[+FA][-FA]+F[-FA]+F",
+  Axiom: "FFA",
+  Rule_1: "A=F[+FA][-FA]+FF[-FAL]",
   Probability_1: 0.6,
   Rule_2: "A=F[&FA][^FA]&F[^FA]",
   Probability_2: 0.4,
+  Rule_3: "X=F[+X][-X]BX",
+  Probability_3: 1.0,
+  Rule_4: "B=FFB",
+  Probability_4: 1.0,
+  LeafDensity: 0.5,
   'UpdateLsystem' : updateLsystem
 };
 
@@ -32,6 +38,7 @@ let square: Square;
 let screenQuad: ScreenQuad;
 let cylinder: Mesh;
 let cube: Cube; 
+let sphere: Icosphere;
 let time: number = 0.0;
 
 let lsystemParser : LsystemParser;
@@ -39,24 +46,28 @@ let lsystemRenderer : LsystemRenderer;
 let axiom : LinkedList;
 
 // GUI parameters
-let prevIterations: number = 8.0;
+let prevIterations: number = 6.0;
 let prevAngle: number = 20.0;
-let prevStepSize: number = 4.0;
-let prevAxiom: string = "FFFAFF";
-let prevRule1: string = "A=F[+FA][-FA]+F[-FA]";
-let prevProbability1: number = 0.6;
-let prevRule2: string = "A=F[&FA][^FA]";
-let prevProbability2: number = 0.4;
+let prevStepSize: number = 5.0;
+let prevAxiom: string = "FFA";
+let prevRule1: string = "A=F[+FA][-FA]FF+F[-FA]X";
+let prevProbability1: number = 1.0;
+let prevRule2: string = "X=F[+X][-X]FX";
+let prevProbability2: number = 1.0;
+let prevRule3: string = "F=FF";
+let prevProbability3: number = 1.0;
+let prevRule4: string = "F=FF";
+let prevProbability4: number = 1.0;
+let prevLeafDensity: number = 0.5;
 
 // Color palette
-let lightPurple = vec3.fromValues(0.91, 0.85, 1.0);
-let darkPurple = vec3.fromValues(0.4, 0.3, 0.56);
+let lightPurple = vec3.fromValues(0.95, 0.85, 1.0);
+let darkPurple = vec3.fromValues(0.3, 0.2, 0.6);
 
 // Lerp function
 function mix(a : vec3, b : vec3, t : number) {
   let m1 = vec3.fromValues(1.0 - t, 1.0 - t, 1.0 - t);
   let m2 = vec3.fromValues(t, t, t);
-  //console.log(m1, m2);
   let aCopy : vec3 = vec3.create();
   let bCopy : vec3 = vec3.create();
   let ret : vec3 = vec3.create();
@@ -67,19 +78,16 @@ function mix(a : vec3, b : vec3, t : number) {
 function updateBuffers() {
   let offsetsArray = [];
   let colorsArray = [];
+  let leafOffsets = [];
+  let leafColors = [];
 
+  // Loop through branches
   let n : number = lsystemRenderer.instances.length;
   for (let k = 0; k < n; k++) {
     let instance : TurtleInstance = lsystemRenderer.instances[k];
     let pos : vec3 = instance.position;
-    //console.log("Position: ", pos);
     let rot : vec3 = instance.orientation;
-    //console.log("Rotation: ", rot);
-    //console.log("Iteration: ", instance.depth);
-    let extraScale = 1.0;
-    if (k < 5) extraScale *= 5.0;
-    let scl : vec3 = vec3.fromValues(3.0 * Math.pow(0.75, instance.depth), controls.StepSize * Math.pow(1.0, instance.depth), 3.0 * Math.pow(0.75, instance.depth));
-    //console.log(instance.depth);
+    let scl : vec3 = vec3.fromValues(3.0 * Math.pow(0.65, instance.depth), controls.StepSize * Math.pow(1.0, instance.depth), 3.0 * Math.pow(0.75, instance.depth));
 
     // Transform rotation into quaternion
     let quat_rot : quat = quat.create();
@@ -96,24 +104,52 @@ function updateBuffers() {
     }
 
     let col : vec3 = mix(darkPurple, lightPurple, (instance.depth / controls.Iterations));
-    //console.log("Color: ", col);
     colorsArray.push(col[0]);
     colorsArray.push(col[1]);
     colorsArray.push(col[2]);
     colorsArray.push(1.0);
-
-    // colorsArray.push((k / n) * pos[1] / 5000.0);
-    // colorsArray.push((k / n) * pos[1] / 5000.0);
-    // colorsArray.push(1.0);
-    // colorsArray.push(1.0);
-
-    //console.log("Color: ", (k / n) * pos[1] / 5000.0);
   }
-  //console.log("Offsets array: ", offsetsArray);
+
   let offsets: Float32Array = new Float32Array(offsetsArray);
   let colors: Float32Array = new Float32Array(colorsArray);
   cube.setInstanceVBOs(offsets, colors);
   cube.setNumInstances(n);
+
+  // Loop through leaves
+  let w : number = lsystemRenderer.leaves.length;
+  for (let k = 0; k < w; k++) {
+    let instance : LeafInstance = lsystemRenderer.leaves[k];
+    let pos : vec3 = instance.position;
+    let rot : vec3 = instance.orientation;
+    let scl : vec3 = vec3.fromValues(1.0, 2.0, 1.0);
+
+    // Transform rotation into quaternion
+    let quat_rot : quat = quat.create();
+    quat.fromEuler(quat_rot, rot[0], rot[1], rot[2]);
+    let transform = mat4.create();
+    mat4.fromRotationTranslationScale(transform, quat_rot, pos, scl);
+
+    // Copy over matrix into offsets array one column at a time
+    for (let m = 0; m < 16; m += 4) {
+      leafOffsets.push(transform[m]);
+      leafOffsets.push(transform[m + 1]);
+      leafOffsets.push(transform[m + 2]);
+      leafOffsets.push(transform[m + 3]);
+    }
+
+    let col : vec3 = darkPurple;
+    // console.log("Color: ", col);
+    col = vec3.fromValues(1.0, 1.0, 1.0);
+    leafColors.push(col[0]);
+    leafColors.push(col[1]);
+    leafColors.push(col[2]);
+    leafColors.push(1.0);
+  }
+
+  let l_offsets: Float32Array = new Float32Array(leafOffsets);
+  let l_colors: Float32Array = new Float32Array(leafColors);
+  sphere.setInstanceVBOs(l_offsets, l_colors);
+  sphere.setNumInstances(w);
 }
 
 function updateLsystem() {
@@ -150,10 +186,17 @@ function updateLsystem() {
     paramsDirty = 1;
   }
 
+  if (controls.LeafDensity != prevLeafDensity)
+  {
+    prevLeafDensity = controls.LeafDensity;
+    lsystemRenderer.setLeafDensity(controls.LeafDensity);
+    paramsDirty = 1;
+  }
+
   if (controls.Rule_1 != prevRule1)
   {
     prevRule1 = controls.Rule_1;
-    lsystemParser.setRules([controls.Rule_1, controls.Rule_2], [controls.Probability_1, controls.Probability_2]);
+    lsystemParser.setRules([controls.Rule_1, controls.Rule_2, controls.Rule_3, controls.Rule_4], [controls.Probability_1, controls.Probability_2, controls.Probability_3, controls.Probability_4]);
     lsystemParser.clearAxiom(controls.Axiom);
     axiom = lsystemParser.parse();
     paramsDirty = 1;
@@ -171,7 +214,7 @@ function updateLsystem() {
   if (controls.Rule_2 != prevRule2)
   {
     prevRule2 = controls.Rule_2;
-    lsystemParser.setRules([controls.Rule_1, controls.Rule_2], [controls.Probability_1, controls.Probability_2]);
+    lsystemParser.setRules([controls.Rule_1, controls.Rule_2, controls.Rule_3, controls.Rule_4], [controls.Probability_1, controls.Probability_2, controls.Probability_3, controls.Probability_4]);
     lsystemParser.clearAxiom(controls.Axiom);
     axiom = lsystemParser.parse();
     paramsDirty = 1;
@@ -180,7 +223,43 @@ function updateLsystem() {
   if (controls.Probability_2 != prevProbability2)
   {
     prevProbability2 = controls.Probability_2;
-    lsystemParser.grammar.updateRuleProbability(controls.Rule_2, controls.Probability_2, 1);
+    lsystemParser.grammar.updateRuleProbability(controls.Rule_2, controls.Probability_2, 0); // TODO: FIX THIS!!
+    lsystemParser.clearAxiom(controls.Axiom);
+    axiom = lsystemParser.parse();
+    paramsDirty = 1;
+  }
+
+  if (controls.Rule_3 != prevRule3)
+  {
+    prevRule3 = controls.Rule_3;
+    lsystemParser.setRules([controls.Rule_1, controls.Rule_2, controls.Rule_3, controls.Rule_4], [controls.Probability_1, controls.Probability_2, controls.Probability_3, controls.Probability_4]);
+    lsystemParser.clearAxiom(controls.Axiom);
+    axiom = lsystemParser.parse();
+    paramsDirty = 1;
+  }
+
+  if (controls.Probability_3 != prevProbability3)
+  {
+    prevProbability3 = controls.Probability_3;
+    lsystemParser.grammar.updateRuleProbability(controls.Rule_3, controls.Probability_3, 0); // TODO: FIX THIS!!
+    lsystemParser.clearAxiom(controls.Axiom);
+    axiom = lsystemParser.parse();
+    paramsDirty = 1;
+  }
+
+  if (controls.Rule_4 != prevRule4)
+  {
+    prevRule3 = controls.Rule_4;
+    lsystemParser.setRules([controls.Rule_1, controls.Rule_2, controls.Rule_3, controls.Rule_4], [controls.Probability_1, controls.Probability_2, controls.Probability_3, controls.Probability_4]);
+    lsystemParser.clearAxiom(controls.Axiom);
+    axiom = lsystemParser.parse();
+    paramsDirty = 1;
+  }
+
+  if (controls.Probability_4 != prevProbability4)
+  {
+    prevProbability3 = controls.Probability_4;
+    lsystemParser.grammar.updateRuleProbability(controls.Rule_4, controls.Probability_4, 0); // TODO: FIX THIS!!
     lsystemParser.clearAxiom(controls.Axiom);
     axiom = lsystemParser.parse();
     paramsDirty = 1;
@@ -188,7 +267,6 @@ function updateLsystem() {
 
   if (paramsDirty) {
     lsystemRenderer.setAxiom(axiom);
-    //axiom.print();
     lsystemRenderer.render();
     updateBuffers();
   }
@@ -203,39 +281,16 @@ function loadScene() {
   cylinder.create();
   cube = new Cube(vec3.fromValues(0, 0, 0));
   cube.create();
+  sphere = new Icosphere(vec3.fromValues(0, 0, 0), 1.0, 3);
+  sphere.create();
 
-  // Set up instanced rendering data arrays here.
-  // This example creates a set of positional
-  // offsets and gradiated colors for a 100x100 grid
-  // of squares, even though the VBO data for just
-  // one square is actually passed to the GPU
-  //let offsetsArray = [];
-  //let colorsArray = [];
-  /*let n: number = 100.0;
-  for(let i = 0; i < n; i++) {
-    for(let j = 0; j < n; j++) {
-      offsetsArray.push(i);
-      offsetsArray.push(j);
-      offsetsArray.push(0);
-
-      colorsArray.push(i / n);
-      colorsArray.push(j / n);
-      colorsArray.push(1.0);
-      colorsArray.push(1.0); // Alpha channel
-    }
-  }
-  let offsets: Float32Array = new Float32Array(offsetsArray);
-  let colors: Float32Array = new Float32Array(colorsArray);
-  square.setInstanceVBOs(offsets, colors);
-  square.setNumInstances(n * n); // grid of "particles"*/
-
-  // Test out Lsystem
-  lsystemParser = new LsystemParser(controls.Axiom, [controls.Rule_1, controls.Rule_2], [controls.Probability_1, controls.Probability_2], controls.Iterations);
+  // Initialize Lsystem
+  lsystemParser = new LsystemParser(controls.Axiom, [controls.Rule_1, controls.Rule_2, controls.Rule_3, controls.Rule_4], [controls.Probability_1, controls.Probability_2, controls.Probability_3, controls.Probability_4], controls.Iterations);
   axiom = lsystemParser.parse();
   //axiom.print();
 
   //let symbolList = new LinkedList("F+F-F-F+F");
-  lsystemRenderer = new LsystemRenderer(axiom, controls.Angle, controls.StepSize);
+  lsystemRenderer = new LsystemRenderer(axiom, controls.Angle, controls.StepSize, controls.LeafDensity);
   lsystemRenderer.render();
   updateBuffers();
 }
@@ -251,14 +306,19 @@ function main() {
 
   // Add controls to the gui
   const gui = new DAT.GUI();
-  gui.add(controls, 'Iterations', 0, 10).step(1).listen();
-  gui.add(controls, 'Angle', 0, 90.0).step(1.0).listen();
+  gui.add(controls, 'Iterations', 0, 8).step(1).listen();
+  gui.add(controls, 'Angle', 0, 30.0).step(1.0).listen();
   gui.add(controls, 'StepSize', 0, 10).step(1);
   gui.add(controls, 'Axiom');
   gui.add(controls, 'Rule_1');
   gui.add(controls, 'Probability_1', 0.0, 1.0).step(0.01);
   gui.add(controls, 'Rule_2');
   gui.add(controls, 'Probability_2', 0.0, 1.0).step(0.01);
+  gui.add(controls, 'Rule_3');
+  gui.add(controls, 'Probability_3', 0.0, 1.0).step(0.01);
+  gui.add(controls, 'Rule_4');
+  gui.add(controls, 'Probability_4', 0.0, 1.0).step(0.01);
+  gui.add(controls, 'LeafDensity', 0.0, 1.0).step(0.01);
   gui.add(controls, 'UpdateLsystem').listen();
 
   // get canvas and webgl context
@@ -278,8 +338,8 @@ function main() {
 
   const renderer = new OpenGLRenderer(canvas);
   renderer.setClearColor(0.2, 0.2, 0.2, 1);
-  //gl.enable(gl.BLEND);
-  gl.blendFunc(gl.ONE, gl.ONE); // Additive blending
+  gl.enable(gl.BLEND);
+  //gl.blendFunc(gl.ONE, gl.ONE); // Additive blending
 
   const instancedShader = new ShaderProgram([
     new Shader(gl.VERTEX_SHADER, require('./shaders/instanced-vert.glsl')),
@@ -304,15 +364,33 @@ function main() {
     flat.setTime(time++);
     sdf.setTime(time++);
     gl.viewport(0, 0, window.innerWidth, window.innerHeight);
-    //updateLsystem();
+    
+    if (controls.Iterations != prevIterations)
+    {
+      updateLsystem();
+    }
+
+    if (controls.Angle != prevAngle)
+    {
+      updateLsystem();
+    }
+
+    if (controls.StepSize != prevStepSize)
+    {
+      updateLsystem();
+    }
+
     renderer.clear();
     //gl.disable(gl.DEPTH_TEST);
-    renderer.render(camera, sdf, [screenQuad]);
-    // gl.enable(gl.DEPTH_TEST);
+    renderer.render(camera, sdf, [screenQuad], 0);
+    //gl.enable(gl.DEPTH_TEST);
     renderer.render(camera, instancedShader, [
       cube,
-    ]);
-    //renderer.render(camera, flat, [cube]);
+    ], 0);
+    renderer.render(camera, instancedShader, [
+      sphere,
+    ], 1);
+    //renderer.render(camera, flat, [sphere]);
     stats.end();
 
     // Tell the browser to call `tick` again whenever it renders a new frame

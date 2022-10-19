@@ -37,6 +37,7 @@ class ShaderProgram {
   unifEye: WebGLUniformLocation;
   unifUp: WebGLUniformLocation;
   unifDimensions: WebGLUniformLocation;
+  unifIsLeaf: WebGLUniformLocation;
 
   constructor(shaders: Array<Shader>) {
     this.prog = gl.createProgram();
@@ -64,6 +65,7 @@ class ShaderProgram {
     this.unifRef   = gl.getUniformLocation(this.prog, "u_Ref");
     this.unifUp   = gl.getUniformLocation(this.prog, "u_Up");
     this.unifDimensions = gl.getUniformLocation(this.prog, "u_Dimensions");
+    this.unifIsLeaf = gl.getUniformLocation(this.prog, "u_IsLeaf");
   }
 
   use() {
@@ -90,6 +92,13 @@ class ShaderProgram {
     this.use();
     if(this.unifDimensions !== -1) {
       gl.uniform2f(this.unifDimensions, width, height);
+    }
+  }
+
+  setIsLeaf(leaf : number) {
+    this.use();
+    if(this.unifIsLeaf !== -1) {
+      gl.uniform1i(this.unifIsLeaf, leaf);
     }
   }
 

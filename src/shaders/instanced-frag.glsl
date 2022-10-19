@@ -1,10 +1,18 @@
 #version 300 es
 precision highp float;
 
+uniform int u_IsLeaf;
+uniform float u_Time;
+
 in vec4 fs_Col;
 in vec4 fs_Pos;
+in float fs_Translation;
 
 out vec4 out_Col;
+
+float noise2Df(vec2 p) {
+    return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+}
 
 vec3 noise3Dv(vec3 p) {
     return fract(sin(vec3(dot(p, vec3(127.1, 311.7, 191.999)),
@@ -41,6 +49,15 @@ float worley3D(vec3 p) {
 
 void main()
 {
-    //float dist = 1.0 - (length(fs_Pos.xyz) * 2.0);
-    out_Col = vec4(vec3(fs_Col.xyz), 1.0);
+    vec3 color = fs_Col.xyz;
+    float noise = noise2Df(vec2(fs_Translation));
+    if (u_IsLeaf == 1) {
+        if (noise > 0.5) {
+            color = mix(vec3(1.0), vec3(0.95, 0.85, 1.0), sin(u_Time * 0.03 + noise));
+        }
+        else {
+            color = mix(vec3(0.95, 0.85, 1.0), vec3(1.0), sin(u_Time * 0.03 + noise));
+        }
+    }
+    out_Col = vec4(color, 1.0);
 }

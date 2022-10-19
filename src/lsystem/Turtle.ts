@@ -1,5 +1,15 @@
 import {vec3, vec4, mat4} from 'gl-matrix';
 
+export class LeafInstance {
+  position: vec3 = vec3.create();
+  orientation: vec3 = vec3.create();
+
+  constructor(position: vec3, orientation : vec3) {
+      this.position = vec3.fromValues(position[0], position[1], position[2]);
+      this.orientation = vec3.fromValues(orientation[0], orientation[1], orientation[2]);
+  }
+}
+
 export class TurtleInstance {
     position: vec3 = vec3.create();
     orientation: vec3 = vec3.create();

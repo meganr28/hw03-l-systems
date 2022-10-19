@@ -9,11 +9,11 @@ uniform vec4 u_Color;
 in vec2 fs_Pos;
 out vec4 out_Col;
 
-#define EPSILON          0.01
+#define EPSILON          0.1
 #define INFINITY         1000000.0
 #define MAX_STEPS        256
 #define MAX_DEPTH        100.0
-#define MAX_RAY_LENGTH   1000.0
+#define MAX_RAY_LENGTH   500.0
 
 #define KEY_LIGHT        vec3(0.91, 0.8, 0.7) * 1.8
 #define FILL_LIGHT       vec3(0.91, 0.85, 1.0) * 0.2
@@ -94,6 +94,13 @@ vec2 noise2Dv( vec2 p ) {
 
 float noise2Df(vec2 p) {
     return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
+}
+
+vec3 noise3Dv(vec3 p) {
+    return fract(sin(vec3(dot(p, vec3(127.1, 311.7, 191.999)),
+                 dot(p, vec3(269.5,183.3,483.1)),
+                 dot(p, vec3(564.5,96.3,223.9))))
+                 * 43758.5453);
 }
 
 float cosineInterpolate(float a, float b, float t)
@@ -177,7 +184,7 @@ float worley2D(vec2 p, int animate) {
         for(int x = -1; x <= 1; ++x) {
             vec2 neighbor = vec2(float(x), float(z)); 
             vec2 point = noise2Dv(pInt + neighbor); // Random point in neighboring cell
-            if (animate == 1) point = 0.5 + 0.5 * sin(0.5 * u_Time * 0.1 + 6.2831 * point);
+            if (animate == 1) point.y += 0.5 + 0.5 * sin(0.5 * u_Time * 0.01);
             
             // Distance between fragment and neighbor point
             vec2 diff = neighbor + point - pFract; 
@@ -185,6 +192,32 @@ float worley2D(vec2 p, int animate) {
             minDist = min(minDist, dist);
         }
     }
+    // Set pixel brightness to distance between pixel and closest point
+    return minDist;
+}
+
+float worley3D(vec3 p) {
+    // Tile space
+    p *= 2.0;
+    vec3 pInt = floor(p);
+    vec3 pFract = fract(p);
+    float minDist = 1.0; // Minimum distance
+
+    // Iterate through neighboring cells to find closest point
+    for(int z = -1; z <= 1; ++z) {
+        for(int y = -1; y <= 1; ++y) {
+            for(int x = -1; x <= 1; ++x) {
+                vec3 neighbor = vec3(float(x), float(y), float(z)); 
+                vec3 point = noise3Dv(pInt + neighbor); // Random point in neighboring cell
+                
+                // Distance between fragment and neighbor point
+                vec3 diff = neighbor + point - pFract; 
+                float dist = length(diff); 
+                minDist = min(minDist, dist);
+            }
+        }
+    }
+
     // Set pixel brightness to distance between pixel and closest point
     return minDist;
 }
@@ -197,7 +230,7 @@ bool getRayLength(vec3 p, vec3 rayOrigin)
 // SDF functions
 float roundedBoxSDF(vec3 rayPos, vec3 objectPos, mat3 transform, vec3 b, float r)
 {
-    vec3 p = (rayPos - objectPos) * transform; //* rotateY3D(-0.528);
+    vec3 p = (rayPos - objectPos) * transform;
     vec3 q = abs(p) - b;
     return length(max(q, 0.0)) + min(max(q.x, max(q.y, q.z)), 0.0) - r;
 }
@@ -218,23 +251,46 @@ float rhombusSDF(vec3 rayPos, vec3 objectPos, mat3 transform, float la, float lb
 
 float piecesSDF(vec3 rayPos, out Material mat)
 {
-    mat3 transform = rotateY3D(1.708) * rotateZ3D(1.408);
-    float piece1 = rhombusSDF(rayPos, vec3(0.0, -0.7, 5.0), transform, 0.6, 0.1, 0.02, 0.02);
-    mat.color = vec3(1.0, 0.0, 0.0);
-    return piece1;
+    mat3 transform1 = rotateY3D(1.708) * rotateZ3D(1.408);
+    float piece1 = rhombusSDF(rayPos, vec3(0.5, -0.3 + 0.2f * sin(u_Time / 50.f), -10.0), transform1, 0.8, 0.2, 0.05, 0.02);
+    float dMin = piece1;
+
+    mat3 transform2 = rotateY3D(1.708) * rotateZ3D(1.408);
+    float piece2 = rhombusSDF(rayPos, vec3(-1.3, -1.7 + 0.2f * sin(u_Time / 90.f), -10.0), transform2, 0.8, 0.2, 0.05, 0.02);
+    dMin = min(dMin, piece2);
+
+    mat3 transform3 = rotateY3D(1.708) * rotateZ3D(1.208);
+    float piece3 = rhombusSDF(rayPos, vec3(-1.1, 0.0 + 0.2f * sin(u_Time / 80.f), -10.0), transform3, 0.8, 0.1, 0.08, 0.02);
+    dMin = min(dMin, piece3);
+
+    mat3 transform4 = rotateY3D(1.708) * rotateZ3D(1.208);
+    float piece4 = rhombusSDF(rayPos, vec3(-0.6, -0.8 + 0.2f * sin(u_Time / 40.f), -10.0), transform3, 0.8, 0.1, 0.08, 0.02);
+    dMin = min(dMin, piece4);
+
+    mat3 transform5 = rotateY3D(1.708) * rotateZ3D(1.208);
+    float piece5 = rhombusSDF(rayPos, vec3(0.0, -2.0 + 0.2f * sin(u_Time / 70.f), -10.0), transform3, 0.8, 0.1, 0.08, 0.02);
+    dMin = min(dMin, piece5);
+
+    mat.color = mix(vec3(0.4, 0.1, 0.8), vec3(2.0), 0.5f * (sin(u_Time * 0.01) + 1.f));
+    return dMin;
 }
 
 float groundSDF(vec3 rayPos, out Material mat)
 {
     // Left wall
     float noise = fbm2D(0.01 * rayPos.xz);
+    float noise2 = worley3D(0.05 * rayPos.xyz + vec3(0, u_Time * 0.01, -u_Time * 0.01));
     float yOffset = 200.f * noise;
-    float leftWall = roundedBoxSDF(rayPos, vec3(70.0, -275.0 + yOffset, -220.0), rotateY3D(0.708), vec3(50.5, 50.5, 0.5), 50.5);
+    float leftWall = roundedBoxSDF(rayPos, vec3(80.0, -275.0 + yOffset, -220.0), rotateY3D(0.708), vec3(50.5, 50.5, 0.5), 50.5);
     float dMin = leftWall;
 
     // Right wall
     float rightWall = roundedBoxSDF(rayPos, vec3(-45.0, -275.0 + yOffset, -220.0), rotateY3D(0.908), vec3(50.5, 50.5, 0.5), 50.5);
     dMin = min(dMin, rightWall);
+
+    // River bed 
+    float river = roundedBoxSDF(rayPos, vec3(-25.0, -110.0, -210.0), rotateY3D(0.908), vec3(5.5, 5.5, 0.5), 50.5);
+    dMin = min(dMin, river);
 
     // Ground
     float ground = planeSDF(rayPos - 150.f * pow(noise, 0.8), -180.0);
@@ -243,10 +299,13 @@ float groundSDF(vec3 rayPos, out Material mat)
     // Assign color
     mat.type = 3;
     if (dMin == leftWall || dMin == rightWall) {
-      mat.color = mix(vec3(0.18, 0.14, 0.20), colors[2], smoothstep(0.4, 0.6, noise));
+      mat.color = vec3(0.3, 0.2, 0.6);
+    }
+    else if (dMin == ground) {
+      mat.color = vec3(0.18, 0.14, 0.3);
     }
     else {
-      mat.color = vec3(0.18, 0.14, 0.20);
+        mat.color = mix(vec3(0.7, 0.6, 0.9), vec3(3.0), smoothstep(0.4, 1.0, noise2));
     }
     return dMin;
 }
@@ -286,7 +345,7 @@ vec3 getBackgroundColor(vec2 uv)
     vec3 mix2 = mix(colors[1], colors[2], smoothstep(0.3, 1.0, uv.y));
 
     if (uv.y < mountains(uv.x)) {
-      return colors[2];
+      return vec3(0.32, 0.24, 0.46);
     }
     
     return mix(mix1, mix2, 0.5);
@@ -375,7 +434,7 @@ void main() {
         for (int i = 0; i < 3; i++)
         {
             float cosTheta = max(0.0, dot(isect.normal, lights[i].direction));
-            color += mat.color * lights[i].color * cosTheta;
+            color += mat.color * lights[i].color * 2.0 * cosTheta;
         }   
     }
     else 
@@ -394,9 +453,8 @@ void main() {
 
     // Compute color (inverse square falloff)
     // Additionally add an ease factor for a slight flicker around the stars
-    float ease = 0.5 * (sin(float(u_Time * 0.005)) + 1.f) + 0.7;
+    float ease = 0.5 * (sin(float(u_Time * 0.01)) + 1.f) + 0.7;
     float light_ball = 0.01 * ease / dist;
-
     color += light_ball;
 
     // Compute final shaded color
