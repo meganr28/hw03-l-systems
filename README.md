@@ -11,6 +11,11 @@ PennKey: meganr28
 
 For this assignment, I loosely based my L-system tree on the trees from World of Warcraft's Crystalsong Forest. I really liked the purple color palette and magical feel of the screenshots/artwork below. There are many interesting features to take note of, such as the rocky terrain, crystals suspended in mid-air, bloom effect on the trees, and color gradient moving up the tree trunk. I tried to capture some of these in my scene using previous concepts we have learned - color palettes, SDFs, and noise. In addition to the visual aspects of the scene, a large portion of this project was spent building the L-system parsing and rendering engine. Implementing the L-system from scratch was a really good learning experience, especially for understanding which rules lead to specific visual results.
 
+| Reference 1        |  Reference 2  |
+:-------------------------:|:-------------------------:|
+![](img/ref1.PNG)  |  ![](img/ref2.PNG) |
+
+
 ## [Live Demo Link](https://meganr28.github.io/hw03-l-systems/)
 
 ## GUI Controls
