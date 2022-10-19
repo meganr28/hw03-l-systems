@@ -13,7 +13,7 @@ For this assignment, I loosely based my L-system tree on the trees from World of
 
 | Reference 1        |  Reference 2  |
 :-------------------------:|:-------------------------:|
-![](img/ref1.PNG)  |  ![](img/ref2.PNG) |
+![](img/ref1.png)  |  ![](img/ref2.png) |
 
 
 ## [Live Demo Link](https://meganr28.github.io/hw03-l-systems/)
