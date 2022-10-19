@@ -32,27 +32,19 @@ export class ExpansionRuleMap {
       rule.postconditions.push(postcondition);
       this.expansionRules.set(precondition, rule);
     }
-    //console.log("Current rules: ", this.expansionRules);
   }
 
   addRules(new_rules : string[], new_probs : number[]) {
-    //console.log("In add rules...");
-    //console.log("New rules size: ", new_rules.length);
     this.expansionRules.clear();
     for (let i = 0; i < new_rules.length; i++) {
       this.addRule(new_rules[i], new_probs[i]);
     }
-
-    this.expansionRules.forEach((value: ExpansionRule, key: string) => {
-      console.log(key, value.postconditions[0]);
-    });
   }
 
   updateRuleProbability(rule : string, prob : number, index : number) {
     let split_rule = rule.split("=", 2);
     let precondition = split_rule[0];
     let expRule = this.expansionRules.get(precondition);
-    //console.log("Update rule exp rule: ", expRule);
     if (expRule) {
       expRule.postconditions[index].probability = prob;
     }
@@ -70,11 +62,7 @@ class LsystemParser {
     this.iterations = iter;
 
     // Init grammar rules
-    this.grammar.addRules(rules, probabilities);
-
-    /*for (let i = 0; i < this.axiom.nodes.length; i++) {
-      console.log("Axiom Node: ", this.axiom.nodes[i].sym.character);
-    }*/    
+    this.grammar.addRules(rules, probabilities);   
   }
 
   setAxiom(new_axiom : string) {
@@ -94,22 +82,19 @@ class LsystemParser {
     let expRule = this.grammar.expansionRules.get(precondition);
     // If this rule does not have any postconditions (i.e. not added to map) then return
     if (!expRule) return "";
-    //console.log("exp rule: ", expRule);
 
     // Generate random number
     let rand : number = Math.random();
     let probability_sum : number = 0.0;
     let postcondition : string = "";
-    //console.log("Postconditions length: ", expRule.postconditions.length);
-    //console.log("Rand: ", rand);
+    // For all postconditions within the list, choose based on probability
     for (let i = 0; i < expRule.postconditions.length; i++) {
       probability_sum += expRule.postconditions[i].probability;
       if (rand < probability_sum) {
-        postcondition = expRule.postconditions[i].sym; // TODO: choose based on probability, will need to iterate when there is more than one
+        postcondition = expRule.postconditions[i].sym;
         break;
       }
     }
-    //console.log("Postcondition: ", postcondition);
     return postcondition;
   }
 
@@ -118,29 +103,18 @@ class LsystemParser {
   }
 
   parse() {
-    //console.log("In Parsing...");
-    //console.log("Axiom: ", this.axiom.nodes);
-    //console.log("Num Iterations: ", this.iterations);
     for (let i = 0; i < this.iterations; i++) {
-      //console.log("ITERATION: ", i);
-      //console.log("Axiom Size: ", this.axiom.nodes.length);
       for (let j = 0; j < this.axiom.nodes.length; j++) {
-        //console.log("j: ", j);
         // If not current iteration, skip
         let curr_it = this.axiom.nodes[j].iteration;
-        //console.log("Node iteration: ", curr_it);
         if (curr_it != i) continue;
 
         // Find rule that corresponds to current symbol in grammar
         let curr_sym = this.axiom.nodes[j].character;
-        //console.log("Curr Sym: ", curr_sym);
         let new_sym = this.applyRule(curr_sym);
-        //console.log("New Sym: ", new_sym);
         this.axiom.expandNode(new_sym, j, i);
-        //console.log("Axiom: ", this.axiom.nodes);
       }
     }
-    //console.log(this.axiom.nodes);
     return this.axiom;
   }
 };

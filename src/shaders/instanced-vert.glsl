@@ -17,14 +17,6 @@ out vec4 fs_Col;
 out vec4 fs_Pos;
 out float fs_Translation;
 
-mat4 rotateY3D(float angle)
-{
-    return mat4(cos(angle), 0, -sin(angle), 0,
-                0, 1, 0, 0,
-                sin(angle), 0, cos(angle), 0,
-                0, 0, 0, 1);
-}
-
 mat4 translate3D(vec3 d)
 {
     return mat4(1, 0, 0, 0,

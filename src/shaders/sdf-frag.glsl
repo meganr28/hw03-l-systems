@@ -80,11 +80,8 @@ mat3 identity()
                 0, 0, 1);
 }
 
+// Noise functions from CIS 560 slides
 float noise1Df(float x) {
-    /*x = (x << 13) ^ x;
-    return float((1 - (x * (x * x * 15731 + 789221)
-            + 1376312589) & 0x7fffffff)
-            / 1073724);*/
     return sin(2.0 * x) + sin(PI * x);
 }
 
@@ -452,7 +449,7 @@ void main() {
     float dist = length(uv + vec2(-0.04, 0.1));
 
     // Compute color (inverse square falloff)
-    // Additionally add an ease factor for a slight flicker around the stars
+    // Ease factor to make light pulse 
     float ease = 0.5 * (sin(float(u_Time * 0.01)) + 1.f) + 0.7;
     float light_ball = 0.01 * ease / dist;
     color += light_ball;

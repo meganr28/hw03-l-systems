@@ -35,10 +35,8 @@ class Turtle {
   }
 
   moveForward(length : number) {
-    //console.log("Move forward before: ", this.direction);
     let dir : vec3 = vec3.create();
     vec3.add(this.position, this.position, vec3.multiply(dir, this.direction, vec3.fromValues(length, length, length)));
-    //console.log("Move forward after: ", this.direction);
   }
 
   rotateDirection(angle : number, axis : number) {
@@ -75,30 +73,22 @@ class Turtle {
 
   pitchUp(x : number) {
     this.rotateDirection(x, 0);
-    //console.log("Pitch Up Before: ", this.orientation);
     vec3.add(this.orientation, this.orientation, vec3.fromValues(x, 0, 0));
-    //console.log("Pitch Up After: ", this.orientation);
   }
 
   pitchDown(x : number) {
     this.rotateDirection(-x, 0);
-    //console.log("Pitch Down Before: ", this.orientation);
     vec3.subtract(this.orientation, this.orientation, vec3.fromValues(x, 0, 0));
-    //console.log("Pitch Down After: ", this.orientation);
   }
 
   rollCounterClockwise(y : number) {
     this.rotateDirection(y, 1);
-    //console.log("Roll Counter Clockwise Before: ", this.orientation);
     vec3.add(this.orientation, this.orientation, vec3.fromValues(0, y, 0));
-    //console.log("Roll Counter Clockwise After: ", this.orientation);
   }
 
   rollClockwise(y : number) {
     this.rotateDirection(-y, 1);
-    //console.log("Roll Clockwise Before: ", this.orientation);
     vec3.subtract(this.orientation, this.orientation, vec3.fromValues(0, y, 0));
-    //console.log("Roll Clockwise After: ", this.orientation);
   }
 };
 

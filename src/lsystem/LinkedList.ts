@@ -29,8 +29,6 @@ class LinkedList {
 
     expandNode(new_sym : string, index : number, iteration : number) {
         if (new_sym == "") return;
-        //console.log("In Expand Node...");
-        //console.log("New sym: ", new_sym);
         // Create new SymbolNode list from new symbols
         let nodesToInsert = [];
         for (let i = 0; i < new_sym.length; i++) {
@@ -39,13 +37,10 @@ class LinkedList {
 
             nodesToInsert.push(node);
         }
-        //console.log("Nodes to insert: ", nodesToInsert);
 
         // Replace and insert starting at given index
         let nodesSize : number = this.nodes.length;
-        //console.log("Nodes size: ", nodesSize);
         for (let j = 0; j < nodesToInsert.length; j++) {
-            //console.log("Node: ", nodesToInsert[j], j);
             if (j == 0) {
                 this.nodes[index] = nodesToInsert[j];
             }
@@ -53,7 +48,6 @@ class LinkedList {
                 this.nodes.splice(index + j, 0, nodesToInsert[j]);    
             }
         }
-        //console.log("Nodes: ", this.nodes);
     }
 
     update(axiom : string) {

@@ -31,11 +31,14 @@ class LsystemRenderer {
   turtleStates: Array<Turtle>;
   drawMap: DrawingRuleMap;
   turt: Turtle; // current state of the turtle
+
+  // Drawing attributes
   angle: number;
   length: number;
   depth: number;
   leafDensity: number;
 
+  // Arrays for instanced rendering of branches and leaves
   positions: Array<vec3>;
   orientations: Array<vec3>;
   instances: Array<TurtleInstance>;
@@ -99,20 +102,16 @@ class LsystemRenderer {
     let rule9 = new DrawingRule([pcond9]);
     let rule10 = new DrawingRule([pcond10]);
 
-    this.drawMap.drawingRules.set('F', rule1);
-    this.drawMap.drawingRules.set('+', rule2);
-    this.drawMap.drawingRules.set('-', rule3);
-    this.drawMap.drawingRules.set('&', rule4);
-    this.drawMap.drawingRules.set('^', rule5);
-    this.drawMap.drawingRules.set('\\\\', rule6);
-    this.drawMap.drawingRules.set('/', rule7);
-    this.drawMap.drawingRules.set('[', rule8);
-    this.drawMap.drawingRules.set(']', rule9);
-    this.drawMap.drawingRules.set('L', rule10);
-
-    // this.drawMap.drawingRules.forEach((value: DrawingRule, key: string) => {
-    //     console.log(key, value.postconditions[0]);
-    // });
+    this.drawMap.drawingRules.set('F', rule1);     // move forward
+    this.drawMap.drawingRules.set('+', rule2);     // rotate right
+    this.drawMap.drawingRules.set('-', rule3);     // rotate left
+    this.drawMap.drawingRules.set('&', rule4);     // pitch down
+    this.drawMap.drawingRules.set('^', rule5);     // pitch up
+    this.drawMap.drawingRules.set('\\\\', rule6);  // roll clockwise
+    this.drawMap.drawingRules.set('/', rule7);     // roll counter-clockwise
+    this.drawMap.drawingRules.set('[', rule8);     // push state
+    this.drawMap.drawingRules.set(']', rule9);     // pop state
+    this.drawMap.drawingRules.set('L', rule10);    // draw leaf
   }
 
   clearTurtleState() {
@@ -125,28 +124,20 @@ class LsystemRenderer {
     this.orientations = [];
     this.instances = [];
     this.leaves = [];
-
-    // Push initial position and orientation
-    //this.positions.push(vec3.fromValues(this.turt.position[0], this.turt.position[1], this.turt.position[2]));
-    //this.orientations.push(vec3.fromValues(this.turt.orientation[0], this.turt.orientation[1], this.turt.orientation[2]));
   }
 
   render() {
     this.clearTurtleState();
     // Iterate through list of symbols 
-    //console.log("Nodes to render: ", this.symbolList.nodes);
     for (let i = 0; i < this.symbolList.nodes.length; i++) {
-        //console.log("Turtle Positions: ", this.positions);
         let sym = this.symbolList.nodes[i].character;
         // Query drawing rules map for drawing command that corresponds with symbol
         // If a command exists, execute it
         let drawRule = this.drawMap.drawingRules.get(sym);
-        //console.log("Render rule: ", sym, drawRule);
         let drawCmd = null;
         if (drawRule) {
-          drawCmd = drawRule.postconditions[0].drawCmd; // TODO: choose based on probability, will need to iterate when there is more than one
+          drawCmd = drawRule.postconditions[0].drawCmd;
         }
-        //console.log(i, sym, drawCmd);
         if (drawCmd) { 
             let addOffset : number = drawCmd();
             if (addOffset) this.addTurtleInstance(this.depth);
@@ -159,7 +150,10 @@ class LsystemRenderer {
     // Find random angle
     let rand_angle : number = rand * 90.0;
     if (rand < this.leafDensity) {
-      let leafInstance : LeafInstance = new LeafInstance(this.turt.position, vec3.add(this.turt.orientation, this.turt.orientation, vec3.fromValues(rand_angle + 20, 0, rand_angle)));
+      // Perturb leaf orientation
+      let orient : vec3 = vec3.create();
+      vec3.add(orient, this.turt.orientation, vec3.fromValues(rand_angle + 20, 0, rand_angle))
+      let leafInstance : LeafInstance = new LeafInstance(this.turt.position, orient);
       this.leaves.push(leafInstance);
     }
   }
@@ -210,14 +204,12 @@ class LsystemRenderer {
     this.turtleStates.push(this.turt);
     this.turt = turtleState;
     this.depth++;
-    //console.log("Push depth: ", this.depth);
     return 0;
   }
 
   popState() {
     this.turt = this.turtleStates.pop();
     this.depth--
-    //console.log("Pop depth: ", this.depth);
     return 0;
   }
 };

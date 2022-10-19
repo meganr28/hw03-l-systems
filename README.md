@@ -1,130 +1,156 @@
-# Homework 4: L-systems
+# Project 3: L-Systems
 
-For this assignment, you will design a set of formal grammar rules to create
-a plant life using an L-system program. Once again, you will work from a
-TypeScript / WebGL 2.0 base code like the one you used in homework 0. You will
-implement your own set of classes to handle the L-system grammar expansion and
-drawing. You will rasterize your L-system using faceted geometry. Feel free
-to use ray marching to generate an interesting background, but trying to
-raymarch an entire L-system will take too long to render!
+Name: Megan Reddy \
+PennKey: meganr28
 
-## Base Code
-The provided code is very similar to that of homework 1, with the same camera and GUI layout. Additionally, we have provided you with a `Mesh` class that, given a filepath, will construct VBOs describing the vertex positions, normals, colors, uvs, and indices for any `.obj` file. The provided code also uses instanced rendering to draw a single square 10,000 times at different locations and with different colors; refer to the Assignment Requirements section for more details on instanced rendering. Farther down this README, we have also provided some example code snippets for setting up hash map structures in TypeScript.
+# Crystalsong Forest Tree
 
-## Assignment Requirements
-- __(15 points)__ Create a collection of classes to represent an L-system. You should have at least the following components to make your L-system functional:
-  - A `Turtle` class to represent the current drawing state of your L-System. It should at least keep track of its current position, current orientation, and recursion depth (how many `[` characters have been found while drawing before `]`s)
-  - A stack of `Turtle`s to represent your `Turtle` history. Push a copy of your current `Turtle` onto this when you reach a `[` while drawing, and pop the top `Turtle` from the stack and make it your current `Turtle` when you encounter a `]`. Note that in TypeScript, `push()` and `pop()` operations can be done on regular arrays.
-  - An expandable string of characters to represent your grammar as you iterate on it.
-  - An `ExpansionRule` class to represent the result of mapping a particular character to a new set of characters during the grammar expansion phase of the L-System. By making a class to represent the expansion, you can have a single character expand to multiple possible strings depending on some probability by querying a `Map<string, ExpansionRule>`.
-  - A `DrawingRule` class to represent the result of mapping a character to an L-System drawing operation (possibly with multiple outcomes depending on a probability).
+<p align="center">
+  <img src="img/cover_photo.PNG"> 
+</p>
 
-- __(10 points)__ Set up the code in `main.ts` and `ShaderProgram.ts` to pass a collection of transformation data to the GPU to draw your L-System geometric components using __instanced rendering__. We will be using instanced rendering to draw our L-Systems because it is much more efficient to pass a single transformation for each object to be drawn rather than an entire collection of vertices. The provided base code has examples of passing a set of `vec3`s to offset the position of each instanced object, and a set of `vec4`s to change the color of each object. You should at least alter the following via instanced rendering (note that these can be accomplished with a single `mat4`):
-  - Position
-  - Orientation
-  - Scaling
+For this assignment, I loosely based my L-system tree on the trees from World of Warcraft's Crystalsong Forest. I really liked the purple color palette and magical feel of the screenshots/artwork below. There are many interesting features to take note of, such as the rocky terrain, crystals suspended in mid-air, bloom effect on the trees, and color gradient moving up the tree trunk. I tried to capture some of these in my scene using previous concepts we have learned - color palettes, SDFs, and noise. In addition to the visual aspects of the scene, a large portion of this project was spent building the L-system parsing and rendering engine. Implementing the L-system from scratch was a really good learning experience, especially for understanding which rules lead to specific visual results.
 
-- __(55 points)__ Your L-System scene must have the following attributes:
-  - Your plant must grow in 3D (branches must not just exist in one plane)
-  - Your plant must have flowers, leaves, or some other branch decoration in addition to basic branch geometry
-  - Organic variation (i.e. noise or randomness in grammar expansion and/or drawing operations)
-  - The background should be a colorful backdrop to complement your plant, incorporating some procedural elements.
-  - A flavorful twist. Don't just make a basic variation of the example F[+FX]-FX from the slides! Create a plant that is unique to you. Make an alien tentacle monster plant if you want to! Play around with drawing operations; don't feel compelled to always make your branches straight lines. Curved forms can look quite visually appealing too.
+## [Live Demo Link](https://meganr28.github.io/hw03-l-systems/)
 
-- __(10 points)__ Using dat.GUI, make at least three aspects of your L-System interactive, such as:
-  - The probability thresholds in your grammar expansions
-  - The angle of rotation in various drawing aspects
-  - The size or color or material of the plant components
-  - Anything else in your L-System expansion or drawing you'd like to make modifiable; it doesn't have to be these particular elements
+## GUI Controls
 
-- __(10 points)__ Following the specifications listed
-[here](https://github.com/pjcozzi/Articles/blob/master/CIS565/GitHubRepo/README.md),
-create your own README.md, renaming the file you are presently reading to
-INSTRUCTIONS.md. Don't worry about discussing runtime optimization for this
-project. Make sure your README contains the following information:
-    - Your name and PennKey
-    - Citation of any external resources you found helpful when implementing this
-    assignment.
-    - A link to your live github.io demo (refer to the pinned Piazza post on
-      how to make a live demo through github.io)
-    - An explanation of the techniques you used to generate your L-System features.
-    Please be as detailed as you can; not only will this help you explain your work
-    to recruiters, but it helps us understand your project when we grade it!
+The artist can control these parameters:
+* `Iterations` - number of generations (higher = bigger tree)
+* `Angle` - angle of rotation
+* `Step Size` - step length
+* `Axiom` - initial state/configuration 
+* `Crystal Density` - quantity of crystals in the tree
+* `Rules` - determine what symbols appear (each maps to a drawing command)
+* `Probability` - probability that the rule will be chosen (to add randomness)
 
-## Writing classes and functions in TypeScript
-Example of a basic Turtle class in TypeScript (Turtle.ts)
+## L-System Classes
+
+First, I began by planning out which classes I needed to implement an L-System engine. Below, I have highlighted the most important functions in each file. See each file in the `lsystem/src` directory for the complete implementation.
+
+`LinkedList.ts`
+
 ```
-import {vec3} from 'gl-matrix';
+// This represents a symbol in the grammar (e.g. "A" or "B")
+export class SymbolNode;
 
-export default class Turtle {
-  constructor(pos: vec3, orient: vec3) {
-    this.position = pos;
-    this.orientation = orient;
-  }
-
-  moveForward() {
-    add(this.position, this.position, this.orientation * 10.0);
-  }
-}
+// This represents a sequence of SymbolNodes (e.g. "ABBAA")
+class LinkedList {
+    convertToLinkedList(axiom: string, iteration : number);            // converts input string from GUI to LinkedList
+    expandNode(new_sym : string, index : number, iteration : number);  // expands a SymbolNode by replacing it with several new nodes
+};
 ```
-Example of a hash map in TypeScript:
+
+`LSystemParser.ts`
+
 ```
-let expansionRules : Map<string, string> = new Map();
-expansionRules.set('A', 'AB');
-expansionRules.set('B', 'A');
+// Represents the postcondition for an expansion rule (e.g. AB in A -> AB)
+export class ExpansionPostcondition {
+	sym: string;
+	probability: number;
+};
 
-console.log(expansionRules.get('A')); // Will print out 'AB'
-console.log(expansionRules.get('C')); // Will print out 'undefined'
+// Represents an expansion rule (may map to multiple postconditions, hence the array)
+export class ExpansionRule {
+	postconditions: Array<ExpansionPostcondition> = new Array();
+};
+
+// Stores all expansion rules as key, value pairs
+export class ExpansionRuleMap {
+	expansionRules: Map<string, ExpansionRule> = new Map();
+};
+
+// Expands a given axiom into a string
+class LsystemParser {
+    applyRule(precondition : string); // Queries the Expansion Map for a postcondition
+    parse();                          // Expands axiom
+};
 ```
-Using functions as map values in TypeScript:
+
+`LSystemRenderer.ts`
+
 ```
-function moveForward() {...}
-function rotateLeft() {...}
-let drawRules : Map<string, any> = new Map();
-drawRules.set('F', moveForward);
-drawRules.set('+', rotateLeft);
+// Represents the postcondition for a drawing rule (e.g. "move forward")
+export class DrawingPostcondition {
+    drawCmd: any;
+	probability: number;
+};
 
-let func = drawRules.get('F');
-if(func) { // Check that the map contains a value for this key
-  func();
-}
+// Represents a drawing rule (e.g. F -> "move forward")
+export class DrawingRule {
+	postconditions: Array<DrawingPostcondition> = [];
+};
+
+// Stores all drawing rules as key, value pairs
+export class DrawingRuleMap {
+	drawingRules: Map<string, DrawingRule> = new Map();
+};
+
+// Reads in a sequence of SymbolNodes and maps them to a drawing command
+class LsystemRenderer {
+    render();
+};
+
 ```
-Note that in the above case, the code assumes that all functions stored in the `drawRules` map take in no arguments. If you want to store a class's functions as values in a map, you'll have to refer to a specific instance of a class, e.g.
+
+`Turtle.ts`
+
 ```
-let myTurtle: Turtle = new Turtle();
-let drawRules: Map<string, any> = new Map();
-drawRules.set('F', myTurtle.moveForward.bind(myTurtle));
-let func = drawRules.get('F');
-if(func) { // Check that the map contains a value for this key
-  func();
-}
+class Turtle {
+  position: vec3 = vec3.create();     // Position of turtle
+  direction: vec3 = vec3.create();    // Orientation expressed as ray direction (not normalized)
+  orientation: vec3 = vec3.create();  // Orientation expressed as Euler Angles (X, Y, Z)
+  depth: number = 0;                  // Recursion depth
+
+  // Moving commands
+  moveForward();
+  rotateLeft();
+  rotateRight();
+  pitchUp()
+  pitchDown();
+  rollCounterClockwise();
+  rollClockwise();
+};
 ```
-TypeScript's `bind` operation sets the `this` variable inside the bound function to refer to the object inside `bind`. This ensures that the `Turtle` in question is the one on which `moveForward` is invoked when `func()` is called with no object.
 
-## Examples from previous years (Click to go to live demo)
 
-Andrea Lin:
+## L-System Rendering
 
-[![](andreaLin.png)](http://andrea-lin.com/Project3-LSystems/)
+Once the classes were in place, it was time to put them to the test. I first tested my implementation on familiar 2D grammars such as the Koch curve and Sierpinski triangle to make sure there were no bugs. After fully testing basic grammar expansion and rendering, I tried extending these to 3D. I started with the basic grammar `F[+F][-F]` and built upon this continuously for my tree, adding small modifications to see the visual result. The result I was looking for was a tree with a wide base and leaves that extended far horizontally. It was tricky to get this effect and small branch details at the same time. One look I came up with in a [2D test engine](https://kevs3d.co.uk/dev/lsystems/) was this:
 
-Ishan Ranade:
+<p align="center">
+  <img src="img/leaf.PNG"> 
+</p>
 
-[![](ishanRanade.png)](https://ishanranade.github.io/homework-4-l-systems-IshanRanade/)
+Although I liked the small leaf details, the tree was too narrow for what I was looking for. I finally settled on this grammar:
 
-Joe Klinger:
+```
+Axiom: "FFA",
+Rule_1: "A=F[+FA][-FA]+FF[-FA]L",
+Probability_1: 0.6,
+Rule_2: "A=F[&FA][^FA]&F[^FA]",
+Probability_2: 0.4,
+```
 
-[![](joeKlinger.png)](https://klingerj.github.io/Project3-LSystems/)
+This grammar features one precondition with two postconditions, which are picked based on a probability. For the tree geometry, I used cubes for the branches and spheres for the "crystal" leaves. Unfortunately, I could not get mesh loading to work, but I am hoping to revisit this and add more visually interesting geometry later! I added a color gradient from the bottom to the top of the tree to mimic the reference images. The color of each branch is decided based on the iteration in which it was added - darker for earlier generations and lighter for later generations. 
 
-Linshen Xiao:
+In addition to specifying probabilities for rules, I also added a value to specify how many crystals the user wants on the tree. I generate a random number with `Math.random()` and compare this to the GUI value to decide whether or not to draw a leaf in the specified position. I also perturb the orientation of the crystals slightly based on a random number so they are not pointing in the same direction. 
 
-[![](linshenXiao.png)](https://githublsx.github.io/homework-4-l-systems-githublsx/)
+Here are more screenshots with different iterations, angles, step sizes, and crystal densities:
 
-## Useful Resources
-- [The Algorithmic Beauty of Plants](http://algorithmicbotany.org/papers/abop/abop-ch1.pdf)
-- [OpenGL Instanced Rendering (Learn OpenGL)](https://learnopengl.com/Advanced-OpenGL/Instancing)
-- [OpenGL Instanced Rendering (OpenGL-Tutorial)](http://www.opengl-tutorial.org/intermediate-tutorials/billboards-particles/particles-instancing/)
+| Iter: 6, Angle: 26, Step: 6, Density: 0.5        |  Iter: 3, Angle: 26, Step: 6, Density: 0.5  |
+:-------------------------:|:-------------------------:|
+![](img/test1.PNG)  |  ![](img/test2.PNG) |  ![](img/test3.PNG)
 
-## Extra Credit (Up to 20 points)
-- For bonus points, add functionality to your L-system drawing that ensures geometry will never overlap. In other words, make your plant behave like a real-life plant so that its branches and other components don't compete for the same space. The more complex you make your L-system self-interaction, the more
-points you'll earn.
-- Any additional visual polish you add to your L-System will count towards extra credit, at your grader's discretion. For example, you could add animation of the leaves or branches in your vertex shader, or add falling leaves or flower petals.
+| Iter: 8, Angle: 14, Step: 6, Density: 1           |  Iter: 8, Angle: 20, Step: 5, Density: 0  | 
+:-------------------------:|:-------------------------:|
+![](img/test3.PNG)  |  ![](img/test4.PNG) |  ![](img/test3.PNG)
+
+### References
+
+* Paul Bourke, [L-System User Notes](http://paulbourke.net/fractals/lsys/)
+* Houdini, [L-System geometry node](https://www.sidefx.com/docs/houdini/nodes/sop/lsystem.html)
+* Wikipedia, [L-system](https://en.wikipedia.org/wiki/L-system)
+* Inigo Quilez, [Distance Functions](https://iquilezles.org/articles/distfunctions/)
+* UPenn CIS 566 Course Notes - L-Systems
+* UPenn CIS 560 Course Notes - Noise Functions

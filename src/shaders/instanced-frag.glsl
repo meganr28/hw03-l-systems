@@ -10,6 +10,7 @@ in float fs_Translation;
 
 out vec4 out_Col;
 
+// Random 2D and 3D noise functions - from CIS 560 slides
 float noise2Df(vec2 p) {
     return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
 }
@@ -50,6 +51,8 @@ float worley3D(vec3 p) {
 void main()
 {
     vec3 color = fs_Col.xyz;
+
+    // Blinking tree crystals
     float noise = noise2Df(vec2(fs_Translation));
     if (u_IsLeaf == 1) {
         if (noise > 0.5) {

@@ -22,7 +22,7 @@ const controls = {
   Angle: 20.0,
   StepSize: 5.0,
   Axiom: "FFA",
-  Rule_1: "A=F[+FA][-FA]+FF[-FAL]",
+  Rule_1: "A=F[+FA][-FA]+FF[-FA]L",
   Probability_1: 0.6,
   Rule_2: "A=F[&FA][^FA]&F[^FA]",
   Probability_2: 0.4,
@@ -30,7 +30,7 @@ const controls = {
   Probability_3: 1.0,
   Rule_4: "B=FFB",
   Probability_4: 1.0,
-  LeafDensity: 0.5,
+  CrystalDensity: 0.5,
   'UpdateLsystem' : updateLsystem
 };
 
@@ -138,7 +138,6 @@ function updateBuffers() {
     }
 
     let col : vec3 = darkPurple;
-    // console.log("Color: ", col);
     col = vec3.fromValues(1.0, 1.0, 1.0);
     leafColors.push(col[0]);
     leafColors.push(col[1]);
@@ -186,10 +185,10 @@ function updateLsystem() {
     paramsDirty = 1;
   }
 
-  if (controls.LeafDensity != prevLeafDensity)
+  if (controls.CrystalDensity != prevLeafDensity)
   {
-    prevLeafDensity = controls.LeafDensity;
-    lsystemRenderer.setLeafDensity(controls.LeafDensity);
+    prevLeafDensity = controls.CrystalDensity;
+    lsystemRenderer.setLeafDensity(controls.CrystalDensity);
     paramsDirty = 1;
   }
 
@@ -223,7 +222,7 @@ function updateLsystem() {
   if (controls.Probability_2 != prevProbability2)
   {
     prevProbability2 = controls.Probability_2;
-    lsystemParser.grammar.updateRuleProbability(controls.Rule_2, controls.Probability_2, 0); // TODO: FIX THIS!!
+    lsystemParser.grammar.updateRuleProbability(controls.Rule_2, controls.Probability_2, 0); 
     lsystemParser.clearAxiom(controls.Axiom);
     axiom = lsystemParser.parse();
     paramsDirty = 1;
@@ -241,7 +240,7 @@ function updateLsystem() {
   if (controls.Probability_3 != prevProbability3)
   {
     prevProbability3 = controls.Probability_3;
-    lsystemParser.grammar.updateRuleProbability(controls.Rule_3, controls.Probability_3, 0); // TODO: FIX THIS!!
+    lsystemParser.grammar.updateRuleProbability(controls.Rule_3, controls.Probability_3, 0); 
     lsystemParser.clearAxiom(controls.Axiom);
     axiom = lsystemParser.parse();
     paramsDirty = 1;
@@ -259,7 +258,7 @@ function updateLsystem() {
   if (controls.Probability_4 != prevProbability4)
   {
     prevProbability3 = controls.Probability_4;
-    lsystemParser.grammar.updateRuleProbability(controls.Rule_4, controls.Probability_4, 0); // TODO: FIX THIS!!
+    lsystemParser.grammar.updateRuleProbability(controls.Rule_4, controls.Probability_4, 0); 
     lsystemParser.clearAxiom(controls.Axiom);
     axiom = lsystemParser.parse();
     paramsDirty = 1;
@@ -277,8 +276,6 @@ function loadScene() {
   square.create();
   screenQuad = new ScreenQuad();
   screenQuad.create();
-  cylinder = new Mesh("./obj/cylinder.obj", vec3.fromValues(0, 0, 0));
-  cylinder.create();
   cube = new Cube(vec3.fromValues(0, 0, 0));
   cube.create();
   sphere = new Icosphere(vec3.fromValues(0, 0, 0), 1.0, 3);
@@ -287,10 +284,8 @@ function loadScene() {
   // Initialize Lsystem
   lsystemParser = new LsystemParser(controls.Axiom, [controls.Rule_1, controls.Rule_2, controls.Rule_3, controls.Rule_4], [controls.Probability_1, controls.Probability_2, controls.Probability_3, controls.Probability_4], controls.Iterations);
   axiom = lsystemParser.parse();
-  //axiom.print();
 
-  //let symbolList = new LinkedList("F+F-F-F+F");
-  lsystemRenderer = new LsystemRenderer(axiom, controls.Angle, controls.StepSize, controls.LeafDensity);
+  lsystemRenderer = new LsystemRenderer(axiom, controls.Angle, controls.StepSize, controls.CrystalDensity);
   lsystemRenderer.render();
   updateBuffers();
 }
@@ -318,7 +313,7 @@ function main() {
   gui.add(controls, 'Probability_3', 0.0, 1.0).step(0.01);
   gui.add(controls, 'Rule_4');
   gui.add(controls, 'Probability_4', 0.0, 1.0).step(0.01);
-  gui.add(controls, 'LeafDensity', 0.0, 1.0).step(0.01);
+  gui.add(controls, 'CrystalDensity', 0.0, 1.0).step(0.01);
   gui.add(controls, 'UpdateLsystem').listen();
 
   // get canvas and webgl context
@@ -338,8 +333,8 @@ function main() {
 
   const renderer = new OpenGLRenderer(canvas);
   renderer.setClearColor(0.2, 0.2, 0.2, 1);
-  gl.enable(gl.BLEND);
-  //gl.blendFunc(gl.ONE, gl.ONE); // Additive blending
+  //gl.enable(gl.BLEND);
+  gl.blendFunc(gl.ONE, gl.ONE); // Additive blending
 
   const instancedShader = new ShaderProgram([
     new Shader(gl.VERTEX_SHADER, require('./shaders/instanced-vert.glsl')),
@@ -365,6 +360,7 @@ function main() {
     sdf.setTime(time++);
     gl.viewport(0, 0, window.innerWidth, window.innerHeight);
     
+    // Dynamically update the tree when iterations, angle, and step size are changed
     if (controls.Iterations != prevIterations)
     {
       updateLsystem();
@@ -381,16 +377,18 @@ function main() {
     }
 
     renderer.clear();
-    //gl.disable(gl.DEPTH_TEST);
+    gl.enable(gl.DEPTH_TEST);
+    // Background
     renderer.render(camera, sdf, [screenQuad], 0);
-    //gl.enable(gl.DEPTH_TEST);
+    gl.clear(gl.DEPTH_BUFFER_BIT);
+    // Branches
     renderer.render(camera, instancedShader, [
       cube,
     ], 0);
+    // Crystals
     renderer.render(camera, instancedShader, [
       sphere,
     ], 1);
-    //renderer.render(camera, flat, [sphere]);
     stats.end();
 
     // Tell the browser to call `tick` again whenever it renders a new frame
