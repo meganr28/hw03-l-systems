@@ -107,8 +107,11 @@ class Icosphere extends Drawable {
       function mid(v0: number, v1: number): number {
         let key = [v0, v1].sort().join('_');
         if (!edgeMap.has(key)) {
-          let midpoint = new Float32Array(buffer0, vertexByteOffset + vertices.length * 4 * Float32Array.BYTES_PER_ELEMENT, 4);
-          vec4.add(midpoint, vertices[v0], vertices[v1]);
+          //let midpoint = new Float32Array(buffer0, vertexByteOffset + vertices.length * 4 * Float32Array.BYTES_PER_ELEMENT, 4);
+          let vert1: vec4 = vec4.fromValues(vertices[v0][0], vertices[v0][1], vertices[v0][2], vertices[v0][3]);
+          let vert2: vec4 = vec4.fromValues(vertices[v1][0], vertices[v1][1], vertices[v1][2], vertices[v1][3]);
+          let midpoint: vec4 = vec4.create();
+          vec4.add(midpoint, vert1, vert2);
           vec4.normalize(midpoint, midpoint);
           edgeMap.set(key, vertices.length);
           vertices.push(midpoint);
@@ -152,7 +155,8 @@ class Icosphere extends Drawable {
     // Populate one position for each normal
     for (let i = 0; i < vertices.length; ++i) {
       let pos = <vec4> new Float32Array(buffer0, positionByteOffset + i * 4 * Float32Array.BYTES_PER_ELEMENT, 4);
-      vec4.scaleAndAdd(pos, this.center, vertices[i], this.radius);
+      let vert: vec4 = vec4.fromValues(vertices[i][0], vertices[i][1], vertices[i][2], vertices[i][3]);
+      vec4.scaleAndAdd(pos, this.center, vert, this.radius);
     }
 
     this.buffer = buffer0;
